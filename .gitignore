@@ -1,0 +1,56 @@
+# Rust
+target/
+# If using Cargo workspaces, ignore target directories at any level
+**/target/
+
+# Wasm-bindgen / wasm-pack outputs
+pkg/
+wasm32-unknown-unknown/
+
+# Node
+node_modules/
+dist/
+build/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Environment
+.env
+.env.*.local
+
+# Editor directories and files
+.vscode/
+.idea/
+*.sublime-workspace
+*.sublime-project
+
+# macOS
+.DS_Store
+
+# Swap files, locks
+*.swp
+*.swo
+*.lock
+
+# Coverage
+coverage/
+.nyc_output/
+
+# Debug and temporary files
+logs/
+*.log
+
+# Generated WASM files (optional — adjust if you commit built artifacts)
+*.wasm
+
+# Misc
+Thumbs.db
+
+# Tets artifacts
+*.rmeta
+*.dSYM/
+screenshots/
