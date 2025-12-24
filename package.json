@@ -1,0 +1,19 @@
+{
+  "name": "raycasting-webassembly-demo",
+  "version": "1.0.0",
+  "description": "WebAssembly Raycasting demo",
+  "license": "MIT",
+  "author": "Andrea Collet <info@andreacollet.com>",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "start": "serve .",
+    "build:wasm": "wasm-pack build --target web --out-dir pkg",
+    "build": "npm run build:wasm",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "devDependencies": {
+    "puppeteer": "^24.34.0",
+    "serve": "^14.2.5"
+  }
+}
