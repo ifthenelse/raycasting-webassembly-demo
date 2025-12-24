@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Super Simple WASM Raycaster</title>
+    <style>
+      body {
+        margin: 0;
+        background: #111;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+      }
+      canvas {
+        image-rendering: pixelated;
+        border: 2px solid #444;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="screen"></canvas>
+
+    <script type="module">
+      import init from "../pkg/wasm_raycaster.js";
+
+      let forward = 0;
+      let turn = 0;
+      let strafe = 0;
+      let jump = 0;
+
+      window.addEventListener("keydown", (e) => {
+        if (e.code === "ArrowUp" || e.code === "KeyW") forward = 1;
+        if (e.code === "ArrowDown" || e.code === "KeyS") forward = -1;
+        if (e.code === "ArrowLeft" || e.code === "KeyA") turn = 1;
+        if (e.code === "ArrowRight" || e.code === "KeyD") turn = -1;
+        // Strafe with comma / period
+        if (e.code === "Comma") strafe = -1;
+        if (e.code === "Period") strafe = 1;
+        // Jump (currently no visual effect in wasm; accepted by API)
+        if (e.code === "Space") jump = 1;
+      });
+
+      window.addEventListener("keyup", (e) => {
+        if (e.code === "ArrowUp" || e.code === "KeyW") {
+          if (forward > 0) forward = 0;
+        }
+        if (e.code === "ArrowDown" || e.code === "KeyS") {
+          if (forward < 0) forward = 0;
+        }
+        if (e.code === "ArrowLeft" || e.code === "KeyA") {
+          if (turn > 0) turn = 0;
+        }
+        if (e.code === "ArrowRight" || e.code === "KeyD") {
+          if (turn < 0) turn = 0;
+        }
+        if (e.code === "Comma") {
+          if (strafe < 0) strafe = 0;
+        }
+        if (e.code === "Period") {
+          if (strafe > 0) strafe = 0;
+        }
+        if (e.code === "Space") {
+          if (jump > 0) jump = 0;
+        }
+      });
+
+      (async () => {
+        // init() loads the .wasm and returns the exports object
+        const wasm = await init();
+
+        // call our Rust init()
+        wasm.init();
+
+        const w = wasm.get_width();
+        const h = wasm.get_height();
+
+        const canvas = document.getElementById("screen");
+        canvas.width = w;
+        canvas.height = h;
+        canvas.style.width = w * 3 + "px";
+        canvas.style.height = h * 3 + "px";
+
+        const ctx = canvas.getContext("2d");
+
+        // access the linear memory from the wasm instance
+        const memory = wasm.memory;
+        const fbPtr = wasm.get_framebuffer_ptr();
+
+        // load textures
+        async function loadTexture(src) {
+          const img = new Image();
+          img.src = src;
+          await img.decode();
+          const c = document.createElement("canvas");
+          c.width = img.width;
+          c.height = img.height;
+          const cx = c.getContext("2d");
+          cx.drawImage(img, 0, 0);
+          const imgData = cx.getImageData(0, 0, c.width, c.height);
+          return { width: img.width, height: img.height, data: imgData.data };
+        }
+
+        const [wallTex, floorTex] = await Promise.all([
+          loadTexture("../assets/wall.png"),
+          loadTexture("../assets/floor.png"),
+        ]);
+
+        // Allocate texture buffers in WASM memory for the exact sizes we need
+        const wallTexPtr = wasm.alloc_wall_texture(
+          wallTex.width,
+          wallTex.height
+        );
+        const floorTexPtr = wasm.alloc_floor_texture(
+          floorTex.width,
+          floorTex.height
+        );
+
+        // Helper to safely create views into WASM memory
+        function createWasmBuffer(ptr, width, height, name) {
+          const bytes = width * height * 4;
+          if (typeof ptr !== "number" || !Number.isFinite(ptr)) {
+            throw new Error(`${name} ptr is not a number: ${ptr}`);
+          }
+          if (!Number.isInteger(bytes) || bytes <= 0) {
+            throw new Error(`${name} invalid size: ${width}x${height}`);
+          }
+          const buf = memory.buffer;
+          if (ptr < 0 || ptr > buf.byteLength) {
+            throw new Error(
+              `${name} ptr out of range: ${ptr} / ${buf.byteLength}`
+            );
+          }
+          const available = buf.byteLength - ptr;
+          if (bytes > available) {
+            console.warn(
+              `${name} requested ${bytes} bytes but only ${available} available; truncating`
+            );
+          }
+          const len = Math.min(bytes, available);
+          return new Uint8Array(buf, ptr, len);
+        }
+
+        // Copy texture data directly into WASM linear memory (with sanity checks)
+        const wallMemory = createWasmBuffer(
+          wallTexPtr,
+          wallTex.width,
+          wallTex.height,
+          "wall"
+        );
+        const wallRequired = wallTex.width * wallTex.height * 4;
+        console.log(
+          "wall tex",
+          wallTex.width,
+          "x",
+          wallTex.height,
+          "required bytes",
+          wallRequired,
+          "wasm available",
+          wallMemory.length
+        );
+        if (wallMemory.length < wallRequired) {
+          console.error(
+            "Not enough WASM memory for wall texture; try increasing WASM memory or shrinking texture."
+          );
+        }
+        // Create a Uint8Array view that respects the ImageData view offset and length
+        const wallSrc = new Uint8Array(
+          wallTex.data.buffer,
+          wallTex.data.byteOffset || 0,
+          wallTex.data.byteLength || wallTex.data.length
+        );
+        // Copy only up to the available length in WASM memory
+        wallMemory.set(
+          wallSrc.subarray(0, Math.min(wallSrc.length, wallMemory.length))
+        );
+        wasm.set_wall_texture_size(wallTex.width, wallTex.height);
+
+        const floorMemory = createWasmBuffer(
+          floorTexPtr,
+          floorTex.width,
+          floorTex.height,
+          "floor"
+        );
+        const floorRequired = floorTex.width * floorTex.height * 4;
+        console.log(
+          "floor tex",
+          floorTex.width,
+          "x",
+          floorTex.height,
+          "required bytes",
+          floorRequired,
+          "wasm available",
+          floorMemory.length
+        );
+        if (floorMemory.length < floorRequired) {
+          console.error(
+            "Not enough WASM memory for floor texture; try increasing WASM memory or shrinking texture."
+          );
+        }
+        const floorSrc = new Uint8Array(
+          floorTex.data.buffer,
+          floorTex.data.byteOffset || 0,
+          floorTex.data.byteLength || floorTex.data.length
+        );
+        floorMemory.set(
+          floorSrc.subarray(0, Math.min(floorSrc.length, floorMemory.length))
+        );
+        wasm.set_floor_texture_size(floorTex.width, floorTex.height);
+
+        let fb = new Uint8ClampedArray(memory.buffer, fbPtr, w * h * 4);
+        let img = new ImageData(fb, w, h);
+
+        function ensureViews() {
+          // memory.buffer might grow; if so recreate views
+          if (fb.buffer !== memory.buffer) {
+            fb = new Uint8ClampedArray(memory.buffer, fbPtr, w * h * 4);
+            img = new ImageData(fb, w, h);
+          }
+        }
+
+        function frame() {
+          // Call step first (wasm may grow memory), then refresh views.
+          wasm.step(forward, turn, strafe, jump);
+          ensureViews();
+          ctx.putImageData(img, 0, 0);
+          requestAnimationFrame(frame);
+        }
+
+        frame();
+      })();
+    </script>
+  </body>
+</html>
