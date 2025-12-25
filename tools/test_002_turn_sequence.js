@@ -21,13 +21,15 @@ const fs = require('fs');
         return c && c.width > 0 && c.height > 0;
     }, { timeout: 5000 });
 
-    async function capture(name) {
+    let shotCounter = 0;
+    async function capture() {
+        shotCounter += 1;
         const clip = await page.evaluate(() => {
             const c = document.getElementById('screen');
             const rect = c.getBoundingClientRect();
             return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
         });
-        const file = `${outDir}/${name}.png`;
+        const file = `${outDir}/${testId}-${String(shotCounter).padStart(3, '0')}.png`;
         await page.screenshot({ path: file, clip });
         console.log('saved', file);
     }
@@ -36,7 +38,7 @@ const fs = require('fs');
 
     // 1) initial screenshot
     await sleep(300);
-    await capture('initial');
+    await capture();
 
     // 2-10) nine small right turns of 0.05s, capturing after each
     for (let i = 1; i <= 9; i++) {
@@ -44,7 +46,7 @@ const fs = require('fs');
         await sleep(50);
         await page.keyboard.up('ArrowRight');
         await sleep(50);
-        await capture(`turn_step_${i}`);
+        await capture();
     }
 
     await browser.close();
