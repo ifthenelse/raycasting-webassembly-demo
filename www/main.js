@@ -1,5 +1,11 @@
 import * as wasmMod from "../pkg/wasm_raycaster.js";
 
+// main.js: JS/WASM glue
+// - Instantiates the wasm module and exposes `pkg` (wasm-bindgen wrapper)
+// - Uploads textures into WASM memory once at startup
+// - Obtains the framebuffer pointer and builds a shared `ImageData`
+// - Calls `pkg.step()` every frame, then blits the framebuffer to the canvas
+
 let forward = 0;
 let turn = 0;
 let strafe = 0;
@@ -116,7 +122,7 @@ window.addEventListener("keyup", (e) => {
 
     let fb = new Uint8ClampedArray(memory.buffer, fbPtr, w * h * 4);
     let img = new ImageData(fb, w, h);
-
+    // Recreate typed views if wasm memory grows
     function ensureViews() {
         if (fb.buffer !== memory.buffer) {
             fb = new Uint8ClampedArray(memory.buffer, fbPtr, w * h * 4);
@@ -124,10 +130,40 @@ window.addEventListener("keyup", (e) => {
         }
     }
 
+    // Simple performance measurement & overlay
+    let perfFrameCount = 0;
+    let perfAccumMs = 0;
+    let perfMs = 0;
+    let perfFps = 0;
+
     function frame() {
+        const t0 = performance.now();
         pkg.step(forward, turn, strafe, jump);
+        const t1 = performance.now();
+        const dur = t1 - t0;
+
+        perfAccumMs += dur;
+        perfFrameCount++;
+        if (perfFrameCount >= 30) {
+            perfMs = perfAccumMs / perfFrameCount;
+            perfFps = 1000 / (perfMs || 1);
+            perfAccumMs = 0;
+            perfFrameCount = 0;
+        }
+
         ensureViews();
         ctx.putImageData(img, 0, 0);
+
+        // Draw small overlay showing fps / ms/frame
+        ctx.save();
+        ctx.fillStyle = "rgba(0,0,0,0.45)";
+        ctx.fillRect(4, 4, 120, 20);
+        ctx.fillStyle = "#0f0";
+        ctx.font = "12px monospace";
+        const txt = `${perfFps.toFixed(1)} fps ${perfMs.toFixed(1)} ms`;
+        ctx.fillText(txt, 8, 18);
+        ctx.restore();
+
         requestAnimationFrame(frame);
     }
 

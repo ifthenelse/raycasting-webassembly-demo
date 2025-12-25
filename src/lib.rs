@@ -1,5 +1,18 @@
 use wasm_bindgen::prelude::*;
 
+// Raycaster core (CPU) compiled to WebAssembly and exposed to JS via `wasm-bindgen`.
+//
+// Integration notes for frontend developers:
+// - The shared framebuffer is `FRAMEBUFFER` (RGBA, WIDTH x HEIGHT). JS obtains a
+//   pointer via `get_framebuffer_ptr()` and builds a `Uint8ClampedArray`/`ImageData`
+//   over wasm memory to blit to a `<canvas>` with `putImageData()`.
+// - Textures are uploaded once from JS into WASM memory. JS calls `alloc_*` to
+//   get a pointer, then copies `ImageData.data` into the returned pointer. After
+//   copying, call `set_*_texture_size(w,h)` so the renderer uses the right dims.
+// - Call `init()` once after module instantiation to set initial state and render
+//   the first frame. On each animation frame call `step(forward, turn, strafe, jump)`
+//   which updates player physics and calls `render_scene()` internally.
+
 const WIDTH: usize = 320;
 const HEIGHT: usize = 200;
 const FB_SIZE: usize = WIDTH * HEIGHT * 4;
