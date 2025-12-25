@@ -95,9 +95,12 @@ window.addEventListener("keyup", (e) => {
         loadTexture("../assets/floor.png"),
     ]);
 
+    const skyTex = await loadTexture("../assets/skybox.png");
+
     // Allocate buffers in WASM for exact sizes
     const wallTexPtr = pkg.alloc_wall_texture(wallTex.width, wallTex.height);
     const floorTexPtr = pkg.alloc_floor_texture(floorTex.width, floorTex.height);
+    const skyTexPtr = pkg.alloc_sky_texture(skyTex.width, skyTex.height);
 
     function createWasmBuffer(ptr, width, height, name) {
         const bytes = width * height * 4;
@@ -119,6 +122,11 @@ window.addEventListener("keyup", (e) => {
     const floorSrc = new Uint8Array(floorTex.data.buffer, floorTex.data.byteOffset || 0, floorTex.data.byteLength || floorTex.data.length);
     floorMemory.set(floorSrc.subarray(0, Math.min(floorSrc.length, floorMemory.length)));
     pkg.set_floor_texture_size(floorTex.width, floorTex.height);
+
+    const skyMemory = createWasmBuffer(skyTexPtr, skyTex.width, skyTex.height, "sky");
+    const skySrc = new Uint8Array(skyTex.data.buffer, skyTex.data.byteOffset || 0, skyTex.data.byteLength || skyTex.data.length);
+    skyMemory.set(skySrc.subarray(0, Math.min(skySrc.length, skyMemory.length)));
+    pkg.set_sky_texture_size(skyTex.width, skyTex.height);
 
     let fb = new Uint8ClampedArray(memory.buffer, fbPtr, w * h * 4);
     let img = new ImageData(fb, w, h);

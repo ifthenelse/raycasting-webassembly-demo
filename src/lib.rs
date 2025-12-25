@@ -42,10 +42,14 @@ static mut WALL_TEX_H: usize = 64;
 static mut FLOOR_TEX_BUF: [u8; TEXTURE_MAX_SIZE] = [0; TEXTURE_MAX_SIZE];
 static mut FLOOR_TEX_W: usize = 64;
 static mut FLOOR_TEX_H: usize = 64;
+static mut SKY_TEX_BUF: [u8; TEXTURE_MAX_SIZE] = [0; TEXTURE_MAX_SIZE];
+static mut SKY_TEX_W: usize = 0;
+static mut SKY_TEX_H: usize = 0;
 
 // Dynamically allocated texture storages (used when JS requests larger textures)
 static mut WALL_TEX_VEC: Option<Vec<u8>> = None;
 static mut FLOOR_TEX_VEC: Option<Vec<u8>> = None;
+static mut SKY_TEX_VEC: Option<Vec<u8>> = None;
 
 // Player state
 static mut POS_X: f32 = 2.5;
@@ -139,21 +143,45 @@ fn render_scene() {
     // store per-column wall bottom (draw_end) so floor rendering can be clipped to walls
     let mut draw_ends: Vec<i32> = vec![HEIGHT as i32; WIDTH];
 
-    // Fill sky + floor base
+    let (pos_x, pos_y, dir_x, dir_y, plane_x, plane_y) = unsafe {
+        (POS_X, POS_Y, DIR_X, DIR_Y, PLANE_X, PLANE_Y)
+    };
+
+    // Fill sky + floor base. For sky pixels we sample the sky texture (if provided)
+    // using the ray direction to compute a horizontal wrap (longitude) and the
+    // vertical position as latitude.
     for y in 0..HEIGHT as i32 {
         let sky = (y as f32) < center;
         for x in 0..WIDTH as i32 {
             if sky {
-                put_pixel(x, y, 80, 120, 200);
+                // compute ray for this column
+                let camera_x = 2.0 * x as f32 / WIDTH as f32 - 1.0;
+                let ray_dir_x = dir_x + plane_x * camera_x;
+                let ray_dir_y = dir_y + plane_y * camera_x;
+
+                // convert direction to [0,1] horizontal coordinate
+                let angle = ray_dir_y.atan2(ray_dir_x);
+                let mut u = angle / (2.0 * std::f32::consts::PI) + 0.5;
+                if !u.is_finite() { u = 0.0; }
+                // vertical mapping: map screen Y to texture V (0..1)
+                // flip so image top corresponds to top of sky area
+                let mut v = (y as f32 / center).max(0.0).min(1.0);
+                if !v.is_finite() { v = 0.0; }
+
+                unsafe {
+                    let sky_slice: &[u8] = if let Some(ref v) = SKY_TEX_VEC { &v[..] } else { &SKY_TEX_BUF[..] };
+                    if SKY_TEX_W > 0 && SKY_TEX_H > 0 && !sky_slice.is_empty() {
+                        let (r, g, b) = sample_bilinear(sky_slice, SKY_TEX_W, SKY_TEX_H, u, v);
+                        put_pixel(x, y, r, g, b);
+                    } else {
+                        put_pixel(x, y, 80, 120, 200);
+                    }
+                }
             } else {
                 put_pixel(x, y, 60, 60, 60);
             }
         }
     }
-
-    let (pos_x, pos_y, dir_x, dir_y, plane_x, plane_y) = unsafe {
-        (POS_X, POS_Y, DIR_X, DIR_Y, PLANE_X, PLANE_Y)
-    };
 
     // Render walls
     for x in 0..WIDTH as i32 {
@@ -410,6 +438,40 @@ pub fn set_floor_texture_size(w: usize, h: usize) {
     unsafe {
         FLOOR_TEX_W = w;
         FLOOR_TEX_H = h;
+    }
+}
+
+#[wasm_bindgen]
+pub fn get_sky_texture_ptr() -> *mut u8 {
+    #[allow(static_mut_refs)]
+    unsafe {
+        if let Some(ref mut v) = SKY_TEX_VEC {
+            v.as_mut_ptr()
+        } else {
+            SKY_TEX_BUF.as_mut_ptr()
+        }
+    }
+}
+
+#[wasm_bindgen]
+pub fn alloc_sky_texture(w: usize, h: usize) -> *mut u8 {
+    let bytes = match w.checked_mul(h).and_then(|p| p.checked_mul(4)) {
+        Some(b) => b,
+        None => return std::ptr::null_mut(),
+    };
+    unsafe {
+        SKY_TEX_VEC = Some(vec![0u8; bytes]);
+        SKY_TEX_W = w;
+        SKY_TEX_H = h;
+        SKY_TEX_VEC.as_mut().unwrap().as_mut_ptr()
+    }
+}
+
+#[wasm_bindgen]
+pub fn set_sky_texture_size(w: usize, h: usize) {
+    unsafe {
+        SKY_TEX_W = w;
+        SKY_TEX_H = h;
     }
 }
 
