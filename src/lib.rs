@@ -478,3 +478,33 @@ pub fn step(forward: f32, turn: f32, strafe: f32, jump: f32) {
 
     render_scene();
 }
+
+#[wasm_bindgen]
+pub fn get_pos_x() -> f32 {
+    unsafe { POS_X }
+}
+
+#[wasm_bindgen]
+pub fn get_pos_y() -> f32 {
+    unsafe { POS_Y }
+}
+
+#[wasm_bindgen]
+pub fn get_dir_x() -> f32 {
+    unsafe { DIR_X }
+}
+
+#[wasm_bindgen]
+pub fn get_dir_y() -> f32 {
+    unsafe { DIR_Y }
+}
+
+#[wasm_bindgen]
+pub fn get_plane_x() -> f32 {
+    unsafe { PLANE_X }
+}
+
+#[wasm_bindgen]
+pub fn get_plane_y() -> f32 {
+    unsafe { PLANE_Y }
+}
