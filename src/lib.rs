@@ -208,6 +208,14 @@ fn render_scene() {
         };
         let wall_x = wall_x - wall_x.floor();
 
+        // Flip texture u-coordinate based on which wall face we hit
+        // to ensure consistent texture orientation
+        let tex_u = if side == 0 {
+            if step_x > 0 { 1.0 - wall_x } else { wall_x }
+        } else {
+            if step_y < 0 { 1.0 - wall_x } else { wall_x }
+        };
+
         let shade = (255.0 / (1.0 + perp_wall_dist * 0.3)).min(255.0);
         let shade = if side == 1 { shade * 0.7 } else { shade };
         let shade = shade / 255.0;
@@ -216,7 +224,8 @@ fn render_scene() {
             for y in draw_start..=draw_end {
                 let tex_v = (y - draw_start) as f32 / ((draw_end - draw_start) as f32 + 1.0);
                 let wall_slice: &[u8] = if let Some(ref v) = WALL_TEX_VEC { &v[..] } else { &WALL_TEX_BUF[..] };
-                let (r, g, b) = sample_bilinear(wall_slice, WALL_TEX_W, WALL_TEX_H, wall_x, tex_v);
+                // use tex_u (flipped when needed) to sample the wall texture horizontally
+                let (r, g, b) = sample_bilinear(wall_slice, WALL_TEX_W, WALL_TEX_H, tex_u, tex_v);
                 let (r, g, b) = apply_shade(r, g, b, shade);
                 put_pixel(x, y, r, g, b);
             }
