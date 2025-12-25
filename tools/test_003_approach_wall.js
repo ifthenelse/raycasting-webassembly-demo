@@ -23,8 +23,10 @@ const fs = require('fs');
 
     const trace = [];
     let shotCounter = 0;
+    const testStartTime = Date.now();
     async function capture(label) {
         shotCounter += 1;
+        const timestamp = Date.now() - testStartTime;
         const state = await page.evaluate(() => {
             const c = document.getElementById('screen');
             return {
@@ -40,6 +42,7 @@ const fs = require('fs');
 
         const checkpoint = {
             id: shotCounter,
+            timestamp_ms: timestamp,
             label: label || `checkpoint_${shotCounter}`,
             position: { x: state.pos_x, y: state.pos_y },
             direction: { x: state.dir_x, y: state.dir_y },
