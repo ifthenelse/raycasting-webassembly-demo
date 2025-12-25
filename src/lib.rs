@@ -17,19 +17,53 @@ const WIDTH: usize = 320;
 const HEIGHT: usize = 200;
 const FB_SIZE: usize = WIDTH * HEIGHT * 4;
 
-// Simple 8x8 map: 1 = wall, 0 = empty
-const MAP_W: usize = 8;
-const MAP_H: usize = 8;
-const WORLD_MAP: [i32; MAP_W * MAP_H] = [
-    1,1,1,1,1,1,1,1,
-    1,0,0,0,0,0,0,1,
-    1,0,0,0,0,0,0,1,
-    1,0,0,1,1,0,0,1,
-    1,0,0,1,1,0,0,1,
-    1,0,0,0,0,0,0,1,
-    1,0,0,0,0,0,0,1,
-    1,1,1,1,1,1,1,1,
-];
+// Runtime-generated map: 1 = wall, 0 = empty
+static mut MAP_W: usize = 8;
+static mut MAP_H: usize = 8;
+static mut WORLD_MAP_VEC: Option<Vec<i32>> = None;
+
+#[wasm_bindgen]
+extern "C" {
+    #[wasm_bindgen(js_namespace = Date, js_name = now)]
+    fn date_now() -> f64;
+}
+
+// Small LCG for deterministic pseudo-randomness seeded with Date.now()
+fn lcg_next(seed: &mut u32) -> u32 {
+    *seed = seed.wrapping_mul(1664525).wrapping_add(1013904223);
+    *seed
+}
+
+fn generate_map(w: usize, h: usize, mut seed: u32) {
+    if w == 0 || h == 0 { return; }
+    let mut v = vec![0i32; w * h];
+
+    // outer walls
+    for x in 0..w {
+        v[x] = 1;
+        v[(h - 1) * w + x] = 1;
+    }
+    for y in 0..h {
+        v[y * w] = 1;
+        v[y * w + (w - 1)] = 1;
+    }
+
+    // random interior walls (sparse)
+    for y in 1..(h - 1) {
+        for x in 1..(w - 1) {
+            let r = (lcg_next(&mut seed) % 100) as u8;
+            if r < 18 { // ~18% walls
+                v[y * w + x] = 1;
+            }
+        }
+    }
+
+    unsafe {
+        MAP_W = w;
+        MAP_H = h;
+        WORLD_MAP_VEC = Some(v);
+    }
+}
 
 static mut FRAMEBUFFER: [u8; FB_SIZE] = [0; FB_SIZE];
 
@@ -64,10 +98,16 @@ static mut JUMP_VY: f32 = 0.0;
 static mut CAMERA_HEIGHT_FACTOR: f32 = 0.5;
 
 fn map_at(x: i32, y: i32) -> i32 {
-    if x < 0 || y < 0 || x >= MAP_W as i32 || y >= MAP_H as i32 {
-        1
-    } else {
-        WORLD_MAP[(y as usize) * MAP_W + (x as usize)]
+    unsafe {
+        let w = MAP_W;
+        let h = MAP_H;
+        if x < 0 || y < 0 || x >= w as i32 || y >= h as i32 {
+            1
+        } else if let Some(ref v) = WORLD_MAP_VEC {
+            v[(y as usize) * w + (x as usize)]
+        } else {
+            1
+        }
     }
 }
 
@@ -477,6 +517,12 @@ pub fn set_sky_texture_size(w: usize, h: usize) {
 
 #[wasm_bindgen]
 pub fn init() {
+    // Generate a new random map on each init (seeded from Date.now())
+    let mut seed = date_now() as u32;
+    let map_w = 8 + (lcg_next(&mut seed) % 13) as usize; // 8..20
+    let map_h = 8 + (lcg_next(&mut seed) % 9) as usize;  // 8..16
+    generate_map(map_w, map_h, seed);
+
     unsafe {
         POS_X = 2.5;
         POS_Y = 2.5;
@@ -484,7 +530,27 @@ pub fn init() {
         DIR_Y = 0.0;
         PLANE_X = 0.0;
         PLANE_Y = 0.66;
+
+        // Ensure player starts in an empty cell; if not, scan for one
+        let mut sx = POS_X as i32;
+        let mut sy = POS_Y as i32;
+        if map_at(sx, sy) != 0 {
+            let mw = MAP_W as i32;
+            let mh = MAP_H as i32;
+            'outer: for y in 1..(mh - 1) {
+                for x in 1..(mw - 1) {
+                    if map_at(x, y) == 0 {
+                        sx = x;
+                        sy = y;
+                        break 'outer;
+                    }
+                }
+            }
+            POS_X = sx as f32 + 0.5;
+            POS_Y = sy as f32 + 0.5;
+        }
     }
+
     render_scene();
 }
 
