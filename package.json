@@ -12,7 +12,7 @@
     "preview": "vite preview --root www",
     "build:wasm": "wasm-pack build --target web --out-dir pkg",
     "build": "npm run build:wasm && npm run build:web",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "node tools/run_tests.js"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^6.2.1",
