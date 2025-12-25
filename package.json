@@ -7,9 +7,9 @@
   "type": "commonjs",
   "main": "index.js",
   "scripts": {
-    "dev": "vite --root www",
-    "build:web": "vite build --root www",
-    "preview": "vite preview --root www",
+    "dev": "vite",
+    "build:web": "vite build",
+    "preview": "vite preview",
     "build:wasm": "wasm-pack build --target web --out-dir pkg",
     "build": "npm run build:wasm && npm run build:web",
     "test": "node tools/run_tests.js"

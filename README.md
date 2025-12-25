@@ -1,72 +1,98 @@
 # Raycasting WebAssembly Demo
 
-This project is a tiny CPU raycaster implemented in Rust and compiled to WebAssembly
-via `wasm-bindgen`. The web frontend uploads textures into WASM memory and blits a
-shared framebuffer to a `<canvas>` each frame.
-
-Quick start
+Tiny CPU raycaster written in Rust and compiled to WebAssembly via `wasm-bindgen`.
+The web frontend uploads textures into WASM memory and blits a shared RGBA
+framebuffer to a `<canvas>` each frame. A debug overlay shows a top-down map
+and player position; the world map can be regenerated at runtime.
 
 Prerequisites
 
-- Rust toolchain with `wasm32-unknown-unknown` target installed (rustup target add wasm32-unknown-unknown)
-- `wasm-pack` installed (https://rustwasm.github.io/wasm-pack/installer/)
-- Node.js + npm
+- Rust toolchain with the `wasm32-unknown-unknown` target installed:
+  `rustup target add wasm32-unknown-unknown`
+- `wasm-pack` (https://rustwasm.github.io/wasm-pack/installer/)
+- Node.js and npm
 
-1. Install JS dependencies
+Install
 
 ```bash
 npm install
 ```
 
-2. Build the WebAssembly package
+Build
+
+1. Build the WebAssembly package (produces `pkg/`):
 
 ```bash
 npm run build:wasm
 ```
 
-3. Start the frontend (development)
+2. Build the web app (bundles assets into `dist/`):
 
-This project uses a small Svelte app inside `www/` served by Vite during development.
+```bash
+npm run build
+```
+
+Development
+
+- Start the dev server (Vite):
 
 ```bash
 npm run dev
 ```
 
-Open the URL printed by Vite (usually http://localhost:5173).
+Open the URL printed by Vite (usually `http://localhost:5173/`). If `pkg/` is
+missing (fresh checkout), run `npm run build:wasm` before `npm run dev` so the
+frontend can import the generated WASM glue.
 
-4. Production build & preview
+Preview production build
 
 ```bash
-# build wasm + web app
-npm run build
-
-# preview the built site (vite preview)
 npm run preview
 ```
 
-Notes
+Project layout
 
-- The WASM package is produced into `pkg/` by `wasm-pack` and imported by the Svelte app.
-- You must run `npm run build:wasm` before starting the dev server if `pkg/wasm_raycaster.js` is not present.
-- Press `M` or click the "Regenerate Map" button to generate a new random world map at runtime.
-- In the browser console you can call `printMap()` to dump the current top-down map (walls as `#`, empty as `.`) and the player position.
+- `src/lib.rs` — Rust crate (raycaster core + wasm-bindgen exports)
+- `pkg/` — generated wasm package (output of `wasm-pack`)
+- `src/web/` — frontend Svelte app (entry: `src/web/main.js`, component: `src/web/App.svelte`)
+- `assets/` — images used by the demo (wall/floor/skybox)
 
-Controls / Hotkeys
+Usage / Controls
 
 - Move forward/back: `ArrowUp` / `ArrowDown` or `W` / `S`
 - Turn left/right: `ArrowLeft` / `ArrowRight` or `A` / `D`
-- Strafe left/right: `,` (Comma) / `.` (Period)
+- Strafe left/right: `,` / `.`
 - Jump: `Space`
+- Regenerate map: press `M` or click the "Regenerate Map" button
+- Debug: call `printMap()` in the browser console to dump the top-down map
 
 Developer notes
 
-- The WASM exports used by the frontend are in `src/lib.rs`. Key functions:
+- WASM exports (see `src/lib.rs`): `get_framebuffer_ptr()`, texture allocators,
+  `init()`, `step(...)`, `get_map_ptr()`, `regenerate_map()` and helpers used by
+  the frontend to access and update the framebuffer.
+- Frontend: `src/web/App.svelte` uploads textures, builds `ImageData` views into
+  the wasm memory and calls `putImageData()` each animation frame.
 
-  - `get_framebuffer_ptr()` — pointer to RGBA framebuffer bytes
-  - `alloc_wall_texture(w,h)` / `alloc_floor_texture(w,h)` — allocate texture
-  - `set_*_texture_size(w,h)` — notify actual texture dimensions
-  - `init()` / `step(forward, turn, strafe, jump)` — lifecycle & per-frame update
+Refactor notes
 
--- The JS glue is now implemented inside the Svelte app at `www/src/App.svelte`. It uploads textures once, builds a `ImageData`
-view into wasm memory and calls `putImageData()` each frame. A small overlay shows
-FPS and ms/frame for profiling, plus a top-down debug map and controls.
+The frontend was moved from `www/src/` into `src/web/` for a flatter repo
+structure. `index.html` now references `./src/web/main.js` and asset paths were
+adjusted accordingly.
+
+If you run into Svelte runtime/compiler issues, try removing the Vite cache and
+restarting the dev server:
+
+```bash
+rm -rf node_modules/.vite
+npm run dev
+```
+
+Contributing
+
+PRs and issues welcome — keep changes focused and run the build/tests before
+submitting.
+
+License
+
+This demo has no specified license in `Cargo.toml`.
