@@ -131,7 +131,8 @@ fn apply_shade(r: u8, g: u8, b: u8, shade: f32) -> (u8, u8, u8) {
 }
 
 fn render_scene() {
-    let jump_px_scale: f32 = 30.0;
+    // pixels per meter: scale physical jump height to screen offset
+    let jump_px_scale: f32 = 50.0;
     // Camera center determined by CAMERA_HEIGHT_FACTOR (0.0..1.0)
     let center: f32 = (HEIGHT as f32) * unsafe { CAMERA_HEIGHT_FACTOR } + unsafe { JUMP_OFFSET * jump_px_scale };
 
@@ -426,49 +427,69 @@ pub fn init() {
 }
 
 #[wasm_bindgen]
-pub fn step(forward: f32, turn: f32, strafe: f32, jump: f32) {
-    let move_speed = 0.05;
-    let rot_speed = 0.03;
-    let jump_initial_v: f32 = 0.9;
-    let gravity: f32 = 0.05;
+pub fn step(forward: f32, turn: f32, strafe: f32, jump: f32, dt: f32) {
+    // Movement speeds are in world units per second, but code previously
+    // used per-frame constants. We'll treat them as per-second and multiply
+    // by dt so motion is framerate-independent.
+    let move_speed = 2.5; // meters per second (forward/back)
+    let rot_speed = 2.0; // radians per second
+    // collision buffer in meters: player stops this far before wall
+    let collide_radius: f32 = 0.2;
+    // More realistic jump physics (m/s and m/s^2). Increase gravity
+    // to make the arc quicker while keeping a reasonable apex.
+    let jump_initial_v: f32 = 4.0; // m/s
+    let gravity: f32 = 18.0; // m/s^2 (stronger for snappier arc)
 
     unsafe {
         if forward.abs() > 0.01 {
-            let nx = POS_X + DIR_X * move_speed * forward;
-            let ny = POS_Y + DIR_Y * move_speed * forward;
+            let nx = POS_X + DIR_X * move_speed * forward * dt;
+            let ny = POS_Y + DIR_Y * move_speed * forward * dt;
 
-            if map_at(nx as i32, ny as i32) == 0 {
+            // test position offset slightly in the movement direction so the
+            // player stops a bit before hitting the wall
+            let test_x = nx + DIR_X * collide_radius;
+            let test_y = ny + DIR_Y * collide_radius;
+
+            if map_at(test_x as i32, test_y as i32) == 0 {
                 POS_X = nx;
                 POS_Y = ny;
             } else {
-                if map_at(nx as i32, POS_Y as i32) == 0 {
+                // allow sliding along walls: try X only and Y only with offset
+                let test_x_only = nx + DIR_X * collide_radius;
+                if map_at(test_x_only as i32, POS_Y as i32) == 0 {
                     POS_X = nx;
                 }
-                if map_at(POS_X as i32, ny as i32) == 0 {
+                let test_y_only = ny + DIR_Y * collide_radius;
+                if map_at(POS_X as i32, test_y_only as i32) == 0 {
                     POS_Y = ny;
                 }
             }
         }
 
         if strafe.abs() > 0.01 {
-            let nx = POS_X + PLANE_X * move_speed * strafe;
-            let ny = POS_Y + PLANE_Y * move_speed * strafe;
+            let nx = POS_X + PLANE_X * move_speed * strafe * dt;
+            let ny = POS_Y + PLANE_Y * move_speed * strafe * dt;
 
-            if map_at(nx as i32, ny as i32) == 0 {
+            let test_x = nx + PLANE_X * collide_radius * strafe.signum();
+            let test_y = ny + PLANE_Y * collide_radius * strafe.signum();
+
+            if map_at(test_x as i32, test_y as i32) == 0 {
                 POS_X = nx;
                 POS_Y = ny;
             } else {
-                if map_at(nx as i32, POS_Y as i32) == 0 {
+                let test_x_only = nx + PLANE_X * collide_radius * strafe.signum();
+                if map_at(test_x_only as i32, POS_Y as i32) == 0 {
                     POS_X = nx;
                 }
-                if map_at(POS_X as i32, ny as i32) == 0 {
+                let test_y_only = ny + PLANE_Y * collide_radius * strafe.signum();
+                if map_at(POS_X as i32, test_y_only as i32) == 0 {
                     POS_Y = ny;
                 }
             }
         }
 
         if turn.abs() > 0.01 {
-            let angle = rot_speed * turn;
+            let angle = rot_speed * turn * dt;
             let old_dir_x = DIR_X;
             DIR_X = DIR_X * angle.cos() - DIR_Y * angle.sin();
             DIR_Y = old_dir_x * angle.sin() + DIR_Y * angle.cos();
@@ -483,8 +504,9 @@ pub fn step(forward: f32, turn: f32, strafe: f32, jump: f32) {
         }
 
         if JUMP_VY != 0.0 || JUMP_OFFSET != 0.0 {
-            JUMP_OFFSET += JUMP_VY;
-            JUMP_VY -= gravity;
+            // integrate using dt (simple Euler integration)
+            JUMP_OFFSET += JUMP_VY * dt;
+            JUMP_VY -= gravity * dt;
             if JUMP_OFFSET <= 0.0 {
                 JUMP_OFFSET = 0.0;
                 JUMP_VY = 0.0;

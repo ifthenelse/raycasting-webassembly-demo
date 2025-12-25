@@ -136,9 +136,19 @@ window.addEventListener("keyup", (e) => {
     let perfMs = 0;
     let perfFps = 0;
 
+    // track wall-clock between frames so physics uses real dt
+    let lastFrameTime = performance.now();
+
     function frame() {
+        const now = performance.now();
+        let dt = (now - lastFrameTime) / 1000; // seconds
+        // clamp dt to avoid physics blowups on tab-switch / pause
+        if (!isFinite(dt) || dt <= 0) dt = 1 / 60;
+        if (dt > 0.1) dt = 0.1;
+        lastFrameTime = now;
+
         const t0 = performance.now();
-        pkg.step(forward, turn, strafe, jump);
+        pkg.step(forward, turn, strafe, jump, dt);
         const t1 = performance.now();
         const dur = t1 - t0;
 
