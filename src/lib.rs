@@ -674,3 +674,57 @@ pub fn get_plane_x() -> f32 {
 pub fn get_plane_y() -> f32 {
     unsafe { PLANE_Y }
 }
+
+#[wasm_bindgen]
+pub fn get_map_w() -> u32 {
+    unsafe { MAP_W as u32 }
+}
+
+#[wasm_bindgen]
+pub fn get_map_h() -> u32 {
+    unsafe { MAP_H as u32 }
+}
+
+#[wasm_bindgen]
+pub fn get_map_ptr() -> *const i32 {
+    #[allow(static_mut_refs)]
+    unsafe {
+        if let Some(ref v) = WORLD_MAP_VEC {
+            v.as_ptr()
+        } else {
+            std::ptr::null()
+        }
+    }
+}
+
+#[wasm_bindgen]
+pub fn regenerate_map(seed: u32) {
+    // seed==0 -> use Date.now()
+    let mut s = if seed == 0 { date_now() as u32 } else { seed };
+    let map_w = 8 + (lcg_next(&mut s) % 13) as usize; // 8..20
+    let map_h = 8 + (lcg_next(&mut s) % 9) as usize;  // 8..16
+    generate_map(map_w, map_h, s);
+
+    unsafe {
+        // ensure player not inside wall
+        let mut sx = POS_X as i32;
+        let mut sy = POS_Y as i32;
+        if map_at(sx, sy) != 0 {
+            let mw = MAP_W as i32;
+            let mh = MAP_H as i32;
+            'outer3: for y in 1..(mh - 1) {
+                for x in 1..(mw - 1) {
+                    if map_at(x, y) == 0 {
+                        sx = x;
+                        sy = y;
+                        break 'outer3;
+                    }
+                }
+            }
+            POS_X = sx as f32 + 0.5;
+            POS_Y = sy as f32 + 0.5;
+        }
+    }
+
+    render_scene();
+}

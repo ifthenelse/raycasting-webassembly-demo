@@ -74,6 +74,88 @@ window.addEventListener("keyup", (e) => {
 
     const ctx = canvas.getContext("2d");
 
+    // --- Map overlay: top-down debug view ---
+    const mapCanvas = document.createElement("canvas");
+    mapCanvas.id = "mapOverlay";
+    mapCanvas.style.position = "absolute";
+    mapCanvas.style.left = "8px";
+    mapCanvas.style.top = "8px";
+    mapCanvas.style.width = "160px";
+    mapCanvas.style.height = "160px";
+    mapCanvas.style.border = "1px solid rgba(255,255,255,0.2)";
+    mapCanvas.style.background = "rgba(0,0,0,0.25)";
+    mapCanvas.width = 160;
+    mapCanvas.height = 160;
+    document.body.appendChild(mapCanvas);
+    const mapCtx = mapCanvas.getContext("2d");
+
+    let mapView = null;
+    let mapPtr = 0;
+    let mapW = 0;
+    let mapH = 0;
+
+    function updateMapView() {
+        try {
+            const mw = pkg.get_map_w();
+            const mh = pkg.get_map_h();
+            const ptr = pkg.get_map_ptr();
+            if (!mw || !mh || !ptr) {
+                mapView = null;
+                return;
+            }
+            // only recreate if sizes/ptr changed or memory grew
+            if (mapPtr !== ptr || mapW !== mw || mapH !== mh || (mapView && mapView.buffer !== memory.buffer)) {
+                mapPtr = ptr;
+                mapW = mw;
+                mapH = mh;
+                mapView = new Int32Array(memory.buffer, mapPtr, mapW * mapH);
+            }
+        } catch (e) {
+            console.warn("updateMapView failed", e);
+            mapView = null;
+        }
+    }
+
+    function drawMapOverlay() {
+        updateMapView();
+        mapCtx.clearRect(0, 0, mapCanvas.width, mapCanvas.height);
+        if (!mapView) {
+            mapCtx.fillStyle = "#fff";
+            mapCtx.font = "12px monospace";
+            mapCtx.fillText("no map", 8, 16);
+            return;
+        }
+        const cellW = mapCanvas.width / mapW;
+        const cellH = mapCanvas.height / mapH;
+        for (let y = 0; y < mapH; y++) {
+            for (let x = 0; x < mapW; x++) {
+                const v = mapView[y * mapW + x];
+                if (v === 1) mapCtx.fillStyle = "#888"; else mapCtx.fillStyle = "#111";
+                mapCtx.fillRect(x * cellW, y * cellH, Math.ceil(cellW), Math.ceil(cellH));
+            }
+        }
+        // draw player
+        try {
+            const px = pkg.get_pos_x();
+            const py = pkg.get_pos_y();
+            mapCtx.fillStyle = "#0f0";
+            mapCtx.fillRect((px - 0.25) * cellW, (py - 0.25) * cellH, Math.ceil(cellW * 0.5), Math.ceil(cellH * 0.5));
+        } catch (e) { }
+    }
+
+    // Regenerate map helper UI: press 'M' to regenerate
+    window.addEventListener('keydown', (e) => {
+        if (e.code === 'KeyM') {
+            try {
+                pkg.regenerate_map(0);
+                // small timeout to allow wasm memory/view updates
+                setTimeout(() => drawMapOverlay(), 10);
+            } catch (err) {
+                console.error('regenerate_map failed', err);
+            }
+        }
+    });
+
     const memory = wasmExports.memory;
     const fbPtr = pkg.get_framebuffer_ptr();
 
@@ -171,6 +253,9 @@ window.addEventListener("keyup", (e) => {
 
         ensureViews();
         ctx.putImageData(img, 0, 0);
+
+        // update and draw map overlay
+        try { drawMapOverlay(); } catch (e) { /* non-fatal */ }
 
         // Draw small overlay showing fps / ms/frame
         ctx.save();
