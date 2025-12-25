@@ -24,13 +24,14 @@ const fs = require('fs');
     let shotCounter = 0;
     async function capture() {
         shotCounter += 1;
-        const clip = await page.evaluate(() => {
+        const dataUrl = await page.evaluate(() => {
             const c = document.getElementById('screen');
-            const rect = c.getBoundingClientRect();
-            return { x: rect.x, y: rect.y, width: rect.width, height: rect.height };
+            return c.toDataURL('image/png');
         });
+        const base64Data = dataUrl.replace(/^data:image\/png;base64,/, '');
+        const buffer = Buffer.from(base64Data, 'base64');
         const file = `${outDir}/${testId}-${String(shotCounter).padStart(3, '0')}.png`;
-        await page.screenshot({ path: file, clip });
+        fs.writeFileSync(file, buffer);
         console.log('saved', file);
     }
 
