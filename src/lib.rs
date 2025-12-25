@@ -43,6 +43,8 @@ static mut PLANE_X: f32 = 0.0;
 static mut PLANE_Y: f32 = 0.66;
 static mut JUMP_OFFSET: f32 = 0.0;
 static mut JUMP_VY: f32 = 0.0;
+// camera height factor (0.0 top, 1.0 bottom). default 0.6
+static mut CAMERA_HEIGHT_FACTOR: f32 = 0.5;
 
 fn map_at(x: i32, y: i32) -> i32 {
     if x < 0 || y < 0 || x >= MAP_W as i32 || y >= MAP_H as i32 {
@@ -117,7 +119,11 @@ fn apply_shade(r: u8, g: u8, b: u8, shade: f32) -> (u8, u8, u8) {
 
 fn render_scene() {
     let jump_px_scale: f32 = 30.0;
-    let center: f32 = (HEIGHT as f32) / 2.0 + unsafe { JUMP_OFFSET * jump_px_scale };
+    // Camera center determined by CAMERA_HEIGHT_FACTOR (0.0..1.0)
+    let center: f32 = (HEIGHT as f32) * unsafe { CAMERA_HEIGHT_FACTOR } + unsafe { JUMP_OFFSET * jump_px_scale };
+
+    // store per-column wall bottom (draw_end) so floor rendering can be clipped to walls
+    let mut draw_ends: Vec<i32> = vec![HEIGHT as i32; WIDTH];
 
     // Fill sky + floor base
     for y in 0..HEIGHT as i32 {
@@ -215,6 +221,10 @@ fn render_scene() {
                 put_pixel(x, y, r, g, b);
             }
         }
+        // record wall bottom for this column to prevent floor overdrawing
+        if x >= 0 && (x as usize) < WIDTH {
+            draw_ends[x as usize] = draw_end;
+        }
     }
 
     // Render floor with perspective-correct casting
@@ -243,6 +253,12 @@ fn render_scene() {
             for x in 0..WIDTH as i32 {
                 let fx = floor_x - floor_x.floor();
                 let fy = floor_y - floor_y.floor();
+                // skip floor pixels that are behind a wall drawn for this column
+                if (y as i32) <= draw_ends[x as usize] {
+                    floor_x += floor_step_x;
+                    floor_y += floor_step_y;
+                    continue;
+                }
                 let floor_slice: &[u8] = if let Some(ref v) = FLOOR_TEX_VEC { &v[..] } else { &FLOOR_TEX_BUF[..] };
                 let (r, g, b) = sample_bilinear(floor_slice, FLOOR_TEX_W, FLOOR_TEX_H, fx, fy);
                 let (r, g, b) = apply_shade(r, g, b, shade);
@@ -268,6 +284,38 @@ pub fn get_height() -> u32 {
 pub fn get_framebuffer_ptr() -> *const u8 {
     #[allow(static_mut_refs)]
     unsafe { FRAMEBUFFER.as_ptr() }
+}
+
+#[wasm_bindgen]
+pub fn set_camera_height_factor(f: f32) {
+    unsafe {
+        CAMERA_HEIGHT_FACTOR = f.max(0.0).min(1.0);
+    }
+}
+
+#[wasm_bindgen]
+pub fn get_camera_height_factor() -> f32 {
+    unsafe { CAMERA_HEIGHT_FACTOR }
+}
+
+#[wasm_bindgen]
+pub fn get_rot_speed() -> f32 {
+    // rotation speed used in `step` (radians per frame)
+    0.03
+}
+
+#[wasm_bindgen]
+pub fn rotate_by(angle: f32) {
+    let a = angle;
+    unsafe {
+        let old_dir_x = DIR_X;
+        DIR_X = DIR_X * a.cos() - DIR_Y * a.sin();
+        DIR_Y = old_dir_x * a.sin() + DIR_Y * a.cos();
+
+        let old_plane_x = PLANE_X;
+        PLANE_X = PLANE_X * a.cos() - PLANE_Y * a.sin();
+        PLANE_Y = old_plane_x * a.sin() + PLANE_Y * a.cos();
+    }
 }
 
 #[wasm_bindgen]
