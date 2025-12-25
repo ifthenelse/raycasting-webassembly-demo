@@ -89,6 +89,25 @@ window.addEventListener("keyup", (e) => {
     document.body.appendChild(mapCanvas);
     const mapCtx = mapCanvas.getContext("2d");
 
+    // visible button to regenerate map
+    const regenBtn = document.createElement('button');
+    regenBtn.textContent = 'Regenerate Map';
+    regenBtn.style.position = 'absolute';
+    regenBtn.style.left = '8px';
+    regenBtn.style.top = '176px';
+    regenBtn.style.zIndex = '1000';
+    regenBtn.style.padding = '6px 8px';
+    regenBtn.style.font = '12px monospace';
+    regenBtn.addEventListener('click', () => {
+        try {
+            pkg.regenerate_map(0);
+            setTimeout(() => drawMapOverlay(), 10);
+        } catch (err) {
+            console.error('regenerate_map failed', err);
+        }
+    });
+    document.body.appendChild(regenBtn);
+
     let mapView = null;
     let mapPtr = 0;
     let mapW = 0;
@@ -155,6 +174,33 @@ window.addEventListener("keyup", (e) => {
             }
         }
     });
+
+    // Expose a console helper to pretty-print the current map
+    window.printMap = function printMap() {
+        try {
+            updateMapView();
+            if (!mapView) {
+                console.log('no map available');
+                return;
+            }
+            const rows = [];
+            for (let y = 0; y < mapH; y++) {
+                let row = '';
+                for (let x = 0; x < mapW; x++) {
+                    row += mapView[y * mapW + x] === 1 ? '#' : '.';
+                }
+                rows.push(row);
+            }
+            try {
+                const px = pkg.get_pos_x();
+                const py = pkg.get_pos_y();
+                console.log(`player @ ${px.toFixed(2)}, ${py.toFixed(2)}`);
+            } catch (e) { }
+            console.log(rows.join('\n'));
+        } catch (e) {
+            console.error('printMap failed', e);
+        }
+    };
 
     const memory = wasmExports.memory;
     const fbPtr = pkg.get_framebuffer_ptr();
