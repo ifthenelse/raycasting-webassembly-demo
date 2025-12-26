@@ -52,6 +52,9 @@
   let mapPtr = 0;
   let mapW = 0;
   let mapH = 0;
+  // Overlay display settings
+  const MAP_CELL_PX = 32; // pixels per map cell (scale) — increased for larger overlay
+  const COLLIDE_RADIUS = 0.15; // must match Rust `collide_radius`
 
   function ensureViews(w, h) {
     if (!memory) return;
@@ -79,7 +82,15 @@
         mapPtr = ptr;
         mapW = mw;
         mapH = mh;
-        mapView = new Int32Array(memory.buffer, mapPtr, mapW * mapH);
+          mapView = new Int32Array(memory.buffer, mapPtr, mapW * mapH);
+          // Resize the overlay canvas to a larger scale for clearer hitbox display
+          if (mapCanvas) {
+            mapCanvas.width = mapW * MAP_CELL_PX;
+            mapCanvas.height = mapH * MAP_CELL_PX;
+            // keep CSS display size reasonable
+            mapCanvas.style.width = `${mapCanvas.width}px`;
+            mapCanvas.style.height = `${mapCanvas.height}px`;
+          }
       }
     } catch (e) {
       console.warn('updateMapView failed', e);
@@ -110,6 +121,48 @@
         const drawY = (mapH - 1 - y) * cellH;
         ctx.fillRect(x * cellW, drawY, Math.ceil(cellW), Math.ceil(cellH));
       }
+    }
+    // Draw wall hitboxes (expanded by collision radius) in semi-transparent orange
+    try {
+      const radiusPx = COLLIDE_RADIUS * cellW;
+      ctx.save();
+      ctx.fillStyle = 'rgba(255,165,0,0.35)';
+      for (let y = 0; y < mapH; y++) {
+        for (let x = 0; x < mapW; x++) {
+          const v = mapView[y * mapW + x];
+          if (v === 1) {
+            // Precise Manhattan-offset polygon (octagon) around the cell.
+            // Cell canvas coords (top-left corner):
+            const x0 = x * cellW;
+            const x1 = (x + 1) * cellW;
+            const y0 = (mapH - 1 - y) * cellH; // top
+            const y1 = y0 + cellH; // bottom
+            const r = radiusPx;
+
+            // The L1 (Manhattan) offset of a rectangle becomes an octagon
+            // with these vertices (clockwise):
+            const pts = [
+              [x0 - r, y0],
+              [x0, y0 - r],
+              [x1, y0 - r],
+              [x1 + r, y0],
+              [x1 + r, y1],
+              [x1, y1 + r],
+              [x0, y1 + r],
+              [x0 - r, y1],
+            ];
+
+            ctx.beginPath();
+            ctx.moveTo(pts[0][0], pts[0][1]);
+            for (let i = 1; i < pts.length; i++) ctx.lineTo(pts[i][0], pts[i][1]);
+            ctx.closePath();
+            ctx.fill();
+          }
+        }
+      }
+      ctx.restore();
+    } catch (e) {
+      // ignore overlay hitbox draw failures
     }
     try {
       const px = pkg.get_pos_x();
@@ -201,6 +254,17 @@
 
       // Draw F (combined) with highlight based on activity
       drawArrow(Fx, Fy, '#ffff66', fActive ? 1.0 : 0.3, 'F');
+
+      // Draw player collision circle in cyan
+      ctx.save();
+      ctx.strokeStyle = '#00ffff';
+      ctx.lineWidth = 2;
+      ctx.globalAlpha = 0.8;
+      ctx.beginPath();
+      const radiusPx = COLLIDE_RADIUS * cellW;
+      ctx.arc(cx, cy, radiusPx, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.restore();
     } catch (e) {}
   }
 
