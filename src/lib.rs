@@ -556,6 +556,98 @@ pub fn init() {
 
 #[wasm_bindgen]
 pub fn step(forward: f32, turn: f32, strafe: f32, jump: f32, dt: f32) {
+    // Helper: test if position is collision-free by checking a circle around it
+    fn is_position_clear(x: f32, y: f32, radius: f32) -> bool {
+        // Simple single-point collision for center
+        if map_at(x as i32, y as i32) != 0 {
+            return false;
+        }
+        
+        // Test 4 cardinal points on circle perimeter
+        let test_points = [
+            (x + radius, y),          // East
+            (x - radius, y),          // West
+            (x, y + radius),          // South
+            (x, y - radius),          // North
+        ];
+        
+        for &(test_x, test_y) in &test_points {
+            if map_at(test_x as i32, test_y as i32) != 0 {
+                return false;
+            }
+        }
+        true
+    }
+    
+    // Detect wall collision and return wall normal vector
+    // Returns None if no collision, Some((nx, ny)) if collision detected
+    fn detect_wall_normal(x: f32, y: f32, radius: f32) -> Option<(f32, f32)> {
+        let test_points = [
+            (x + radius, y, 1.0, 0.0),     // East -> normal points west
+            (x - radius, y, -1.0, 0.0),    // West -> normal points east
+            (x, y + radius, 0.0, 1.0),     // South -> normal points north
+            (x, y - radius, 0.0, -1.0),    // North -> normal points south
+        ];
+        
+        for &(test_x, test_y, nx, ny) in &test_points {
+            if map_at(test_x as i32, test_y as i32) != 0 {
+                return Some((nx, ny));
+            }
+        }
+        None
+    }
+    
+    // Vector projection-based wall sliding
+    // Decomposes movement vector into normal and parallel components relative to wall
+    fn slide_move(start_x: f32, start_y: f32, dx: f32, dy: f32, radius: f32) -> (f32, f32) {
+        let target_x = start_x + dx;
+        let target_y = start_y + dy;
+        
+        // No collision - move freely
+        if is_position_clear(target_x, target_y, radius) {
+            return (target_x, target_y);
+        }
+        
+        // Collision detected - find wall normal and project movement onto wall
+        if let Some((wall_nx, wall_ny)) = detect_wall_normal(target_x, target_y, radius) {
+            // Compute dot product: movement · normal
+            let dot = dx * wall_nx + dy * wall_ny;
+            
+            // Project movement onto wall by removing normal component
+            // parallel = movement - (movement · normal) * normal
+            let slide_dx = dx - dot * wall_nx;
+            let slide_dy = dy - dot * wall_ny;
+            
+            let slide_x = start_x + slide_dx;
+            let slide_y = start_y + slide_dy;
+            
+            // Try sliding movement
+            if is_position_clear(slide_x, slide_y, radius) {
+                return (slide_x, slide_y);
+            }
+            
+            // If sliding also fails (corner), try smaller fraction of slide
+            for &frac in &[0.5, 0.25, 0.1] {
+                let tiny_x = start_x + slide_dx * frac;
+                let tiny_y = start_y + slide_dy * frac;
+                if is_position_clear(tiny_x, tiny_y, radius) {
+                    return (tiny_x, tiny_y);
+                }
+            }
+        }
+        
+        // Fallback: try axis-aligned movement
+        if is_position_clear(target_x, start_y, radius) {
+            return (target_x, start_y);
+        }
+        if is_position_clear(start_x, target_y, radius) {
+            return (start_x, target_y);
+        }
+        
+        // Completely stuck - don't move
+        (start_x, start_y)
+    }
+    
     // Movement speeds are in world units per second, but code previously
     // used per-frame constants. We'll treat them as per-second and multiply
     // by dt so motion is framerate-independent.
@@ -570,50 +662,19 @@ pub fn step(forward: f32, turn: f32, strafe: f32, jump: f32, dt: f32) {
 
     unsafe {
         if forward.abs() > 0.01 {
-            let nx = POS_X + DIR_X * move_speed * forward * dt;
-            let ny = POS_Y + DIR_Y * move_speed * forward * dt;
-
-            // test position offset slightly in the movement direction so the
-            // player stops a bit before hitting the wall
-            let test_x = nx + DIR_X * collide_radius;
-            let test_y = ny + DIR_Y * collide_radius;
-
-            if map_at(test_x as i32, test_y as i32) == 0 {
-                POS_X = nx;
-                POS_Y = ny;
-            } else {
-                // allow sliding along walls: try X only and Y only with offset
-                let test_x_only = nx + DIR_X * collide_radius;
-                if map_at(test_x_only as i32, POS_Y as i32) == 0 {
-                    POS_X = nx;
-                }
-                let test_y_only = ny + DIR_Y * collide_radius;
-                if map_at(POS_X as i32, test_y_only as i32) == 0 {
-                    POS_Y = ny;
-                }
-            }
+            let dx = DIR_X * move_speed * forward * dt;
+            let dy = DIR_Y * move_speed * forward * dt;
+            let (new_x, new_y) = slide_move(POS_X, POS_Y, dx, dy, collide_radius);
+            POS_X = new_x;
+            POS_Y = new_y;
         }
 
         if strafe.abs() > 0.01 {
-            let nx = POS_X + PLANE_X * move_speed * strafe * dt;
-            let ny = POS_Y + PLANE_Y * move_speed * strafe * dt;
-
-            let test_x = nx + PLANE_X * collide_radius * strafe.signum();
-            let test_y = ny + PLANE_Y * collide_radius * strafe.signum();
-
-            if map_at(test_x as i32, test_y as i32) == 0 {
-                POS_X = nx;
-                POS_Y = ny;
-            } else {
-                let test_x_only = nx + PLANE_X * collide_radius * strafe.signum();
-                if map_at(test_x_only as i32, POS_Y as i32) == 0 {
-                    POS_X = nx;
-                }
-                let test_y_only = ny + PLANE_Y * collide_radius * strafe.signum();
-                if map_at(POS_X as i32, test_y_only as i32) == 0 {
-                    POS_Y = ny;
-                }
-            }
+            let dx = PLANE_X * move_speed * strafe * dt;
+            let dy = PLANE_Y * move_speed * strafe * dt;
+            let (new_x, new_y) = slide_move(POS_X, POS_Y, dx, dy, collide_radius);
+            POS_X = new_x;
+            POS_Y = new_y;
         }
 
         if turn.abs() > 0.01 {
