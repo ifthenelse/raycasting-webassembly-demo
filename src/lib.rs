@@ -558,111 +558,162 @@ pub fn init() {
 pub fn step(forward: f32, turn: f32, strafe: f32, jump: f32, dt: f32) {
     // Helper: test if position is collision-free by checking a circle around it
     fn is_position_clear(x: f32, y: f32, radius: f32) -> bool {
-        // Simple single-point collision for center
-        if map_at(x as i32, y as i32) != 0 {
-            return false;
-        }
+        // Diamond-shaped collision detection using Manhattan distance.
+        // This creates a hitbox rotated 45° that's more forgiving at corners
+        // than a circle, allowing smooth sliding through diagonal corner gaps.
+        // A point (px, py) collides with wall at (wx, wy) if:
+        //   |px - closest_x| + |py - closest_y| < radius
         
-        // Test 4 cardinal points on circle perimeter
-        let test_points = [
-            (x + radius, y),          // East
-            (x - radius, y),          // West
-            (x, y + radius),          // South
-            (x, y - radius),          // North
-        ];
+        let min_grid_x = ((x - radius).floor() as i32);
+        let max_grid_x = ((x + radius).ceil() as i32);
+        let min_grid_y = ((y - radius).floor() as i32);
+        let max_grid_y = ((y + radius).ceil() as i32);
         
-        for &(test_x, test_y) in &test_points {
-            if map_at(test_x as i32, test_y as i32) != 0 {
-                return false;
+        for grid_y in min_grid_y..=max_grid_y {
+            for grid_x in min_grid_x..=max_grid_x {
+                if map_at(grid_x, grid_y) != 0 {
+                    // Found a wall cell at [grid_x, grid_x+1) x [grid_y, grid_y+1)
+                    
+                    // Find closest point on this wall cell to player position
+                    let closest_x = x.max(grid_x as f32).min((grid_x + 1) as f32);
+                    let closest_y = y.max(grid_y as f32).min((grid_y + 1) as f32);
+                    
+                    // Use Manhattan distance (diamond shape) for collision
+                    let dx = (x - closest_x).abs();
+                    let dy = (y - closest_y).abs();
+                    let manhattan_distance = dx + dy;
+                    
+                    if manhattan_distance < radius {
+                        return false; // Collision detected
+                    }
+                }
             }
         }
         true
     }
     
-    // Detect wall collision and return wall normal vector
-    // Returns None if no collision, Some((nx, ny)) if collision detected
-    fn detect_wall_normal(x: f32, y: f32, radius: f32) -> Option<(f32, f32)> {
-        let test_points = [
-            (x + radius, y, 1.0, 0.0),     // East -> normal points west
-            (x - radius, y, -1.0, 0.0),    // West -> normal points east
-            (x, y + radius, 0.0, 1.0),     // South -> normal points north
-            (x, y - radius, 0.0, -1.0),    // North -> normal points south
-        ];
+    // Detect collision and return the surface normal of the wall being hit.
+    // Returns None if no collision, Some((nx, ny)) with the wall normal if collision.
+    // For Manhattan offset: diagonal edges have normals like (±1/√2, ±1/√2)
+    // For straight walls: normals are (±1, 0) or (0, ±1)
+    fn detect_collision_normal(x: f32, y: f32, radius: f32) -> Option<(f32, f32)> {
+        let min_grid_x = ((x - radius).floor() as i32);
+        let max_grid_x = ((x + radius).ceil() as i32);
+        let min_grid_y = ((y - radius).floor() as i32);
+        let max_grid_y = ((y + radius).ceil() as i32);
         
-        for &(test_x, test_y, nx, ny) in &test_points {
-            if map_at(test_x as i32, test_y as i32) != 0 {
-                return Some((nx, ny));
+        let mut closest_dist = f32::INFINITY;
+        let mut best_normal: Option<(f32, f32)> = None;
+        
+        for grid_y in min_grid_y..=max_grid_y {
+            for grid_x in min_grid_x..=max_grid_x {
+                if map_at(grid_x, grid_y) != 0 {
+                    // Wall cell bounds
+                    let wx0 = grid_x as f32;
+                    let wx1 = (grid_x + 1) as f32;
+                    let wy0 = grid_y as f32;
+                    let wy1 = (grid_y + 1) as f32;
+                    
+                    // Closest point on cell
+                    let closest_x = x.max(wx0).min(wx1);
+                    let closest_y = y.max(wy0).min(wy1);
+                    
+                    let dx = x - closest_x;
+                    let dy = y - closest_y;
+                    let manhattan_dist = dx.abs() + dy.abs();
+                    
+                    if manhattan_dist < radius && manhattan_dist < closest_dist {
+                        closest_dist = manhattan_dist;
+                        
+                        // Determine which surface: axis-aligned wall or diagonal corner
+                        let on_left = (closest_x - wx0).abs() < 0.001;
+                        let on_right = (closest_x - wx1).abs() < 0.001;
+                        let on_bottom = (closest_y - wy0).abs() < 0.001;
+                        let on_top = (closest_y - wy1).abs() < 0.001;
+                        
+                        // Check if at corner (diagonal edge of Manhattan offset)
+                        let at_corner = (on_left || on_right) && (on_bottom || on_top);
+                        
+                        if at_corner {
+                            // Diagonal edge - normal points away from corner
+                            // Normalize the diagonal normal
+                            let inv_sqrt2 = 0.70710678118; // 1/sqrt(2)
+                            let nx = dx.signum() * inv_sqrt2;
+                            let ny = dy.signum() * inv_sqrt2;
+                            best_normal = Some((nx, ny));
+                        } else {
+                            // Straight edge - axis-aligned normal
+                            if dx.abs() > dy.abs() {
+                                best_normal = Some((dx.signum(), 0.0));
+                            } else {
+                                best_normal = Some((0.0, dy.signum()));
+                            }
+                        }
+                    }
+                }
             }
         }
-        None
+        
+        best_normal
     }
     
-    // Vector projection-based wall sliding with iterative corner handling
-    // Decomposes movement vector into normal and parallel components relative to wall
+    // Physics-based wall sliding: project movement vector onto wall tangent.
+    // When hitting a wall, decompose the force into parallel (tangent) and
+    // perpendicular (normal) components. Only the tangent component produces movement.
     fn slide_move(start_x: f32, start_y: f32, dx: f32, dy: f32, radius: f32) -> (f32, f32) {
         let target_x = start_x + dx;
         let target_y = start_y + dy;
         
-        // No collision - move freely
+        // 1. Try full movement - no collision
         if is_position_clear(target_x, target_y, radius) {
             return (target_x, target_y);
         }
         
-        // Collision detected - slide along wall(s) iteratively
-        // At corners, we may need to slide along first wall, then second wall
-        let mut current_dx = dx;
-        let mut current_dy = dy;
-        let mut result_x = start_x;
-        let mut result_y = start_y;
-        
-        // Try up to 2 iterations (handles corners with 2 perpendicular walls)
-        for _ in 0..2 {
-            let try_x = start_x + current_dx;
-            let try_y = start_y + current_dy;
+        // 2. Collision detected - find the wall normal at target position
+        if let Some((nx, ny)) = detect_collision_normal(target_x, target_y, radius) {
+            // Project movement vector onto wall tangent (perpendicular to normal)
+            // Tangent vector: rotate normal by 90° => tangent = (-ny, nx)
+            let tx = -ny;
+            let ty = nx;
             
-            if is_position_clear(try_x, try_y, radius) {
-                result_x = try_x;
-                result_y = try_y;
-                break;
-            }
+            // Project (dx, dy) onto tangent: dot product with tangent vector
+            let projection = dx * tx + dy * ty;
             
-            // Hit a wall - find normal and project movement
-            if let Some((wall_nx, wall_ny)) = detect_wall_normal(try_x, try_y, radius) {
-                // Compute dot product: movement · normal
-                let dot = current_dx * wall_nx + current_dy * wall_ny;
-                
-                // Project movement onto wall by removing normal component
-                // parallel = movement - (movement · normal) * normal
-                current_dx = current_dx - dot * wall_nx;
-                current_dy = current_dy - dot * wall_ny;
-                
-                let slide_x = start_x + current_dx;
-                let slide_y = start_y + current_dy;
-                
-                // Check if this slide works
-                if is_position_clear(slide_x, slide_y, radius) {
-                    result_x = slide_x;
-                    result_y = slide_y;
-                    break;
-                }
-                // If not, loop will try again with the new direction
-            } else {
-                // No wall detected but still colliding - stuck, give up
-                break;
+            // Movement along wall = projection * tangent_direction
+            let slide_dx = projection * tx;
+            let slide_dy = projection * ty;
+            
+            let slide_x = start_x + slide_dx;
+            let slide_y = start_y + slide_dy;
+            
+            // Verify the slide position is valid
+            if is_position_clear(slide_x, slide_y, radius) {
+                return (slide_x, slide_y);
             }
         }
         
-        // If iterative sliding didn't work, try simple axis-aligned fallback
-        if result_x == start_x && result_y == start_y {
+        // 3. Fallback: try axis-aligned sliding (for edge cases)
+        let abs_dx = dx.abs();
+        let abs_dy = dy.abs();
+        
+        if abs_dx > abs_dy {
             if is_position_clear(target_x, start_y, radius) {
                 return (target_x, start_y);
             }
             if is_position_clear(start_x, target_y, radius) {
                 return (start_x, target_y);
             }
+        } else {
+            if is_position_clear(start_x, target_y, radius) {
+                return (start_x, target_y);
+            }
+            if is_position_clear(target_x, start_y, radius) {
+                return (target_x, start_y);
+            }
         }
         
-        (result_x, result_y)
+        // No movement possible
+        (start_x, start_y)
     }
     
     // Movement speeds are in world units per second, but code previously
