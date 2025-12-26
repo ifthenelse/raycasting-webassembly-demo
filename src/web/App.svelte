@@ -41,6 +41,10 @@
   let raf = null;
   let lastFrameTime = performance.now();
   let unbind = null;
+  let canvasFocused = false;
+  let onFocusHandler = null;
+  let onBlurHandler = null;
+  let clickHandler = null;
 
   // map overlay state
   let mapView = null;
@@ -135,7 +139,10 @@
     return new Uint8Array(buf, ptr, len);
   }
 
-  function bindKeys() {
+  // Bind key handlers to a specific element (canvas) so game controls
+  // are only active while that element is focused.
+  function bindKeys(target) {
+    if (!target) return () => {};
     const down = (e) => {
       if (e.code === "ArrowUp" || e.code === "KeyW") forward = 1;
       if (e.code === "ArrowDown" || e.code === "KeyS") forward = -1;
@@ -143,7 +150,11 @@
       if (e.code === "ArrowRight" || e.code === "KeyD") turn = -1;
       if (e.code === "Comma") strafe = -1;
       if (e.code === "Period") strafe = 1;
-      if (e.code === "Space") jump = 1;
+      if (e.code === "Space") {
+        jump = 1;
+        // prevent page scroll when space pressed while focused
+        e.preventDefault();
+      }
       if (e.code === "KeyM") {
         try {
           pkg.regenerate_map(0);
@@ -172,13 +183,14 @@
       }
       if (e.code === "Space") {
         if (jump > 0) jump = 0;
+        e.preventDefault();
       }
     };
-    window.addEventListener("keydown", down);
-    window.addEventListener("keyup", up);
+    target.addEventListener("keydown", down);
+    target.addEventListener("keyup", up);
     return () => {
-      window.removeEventListener("keydown", down);
-      window.removeEventListener("keyup", up);
+      target.removeEventListener("keydown", down);
+      target.removeEventListener("keyup", up);
     };
   }
 
@@ -278,7 +290,45 @@
     fbPtr = pkg.get_framebuffer_ptr();
     ensureViews(w, h);
 
-    unbind = bindKeys();
+    // Make canvas focusable and attach focus/blur handlers so controls
+    // are only active while the canvas has keyboard focus. Guard in case
+    // the canvas ref is not yet available (HMR / edge cases).
+    if (canvas) {
+      canvas.tabIndex = 0;
+      // focus on click for convenience
+      clickHandler = () => canvas.focus();
+      canvas.addEventListener("click", clickHandler);
+
+      onFocusHandler = () => {
+        canvasFocused = true;
+        // attach key handlers to canvas
+        unbind = bindKeys(canvas);
+      };
+      onBlurHandler = () => {
+        canvasFocused = false;
+        // remove key handlers
+        if (typeof unbind === "function") {
+          unbind();
+          unbind = null;
+        }
+        // clear movement inputs when unfocused
+        forward = 0;
+        turn = 0;
+        strafe = 0;
+        jump = 0;
+      };
+      canvas.addEventListener("focus", onFocusHandler);
+      canvas.addEventListener("blur", onBlurHandler);
+      // Focus the canvas by default on initial load. Use setTimeout to
+      // avoid potential HMR/ref race conditions where focus may fail.
+      try {
+        setTimeout(() => {
+          if (canvas) canvas.focus();
+        }, 0);
+      } catch (e) {}
+    } else {
+      console.warn("App.svelte: canvas ref is null in onMount");
+    }
 
     // record the initial seed used by wasm.init() as a best-effort
     try {
@@ -325,7 +375,9 @@
       lastFrameTime = now;
 
       const t0 = performance.now();
-      pkg.step(forward, turn, strafe, jump, dt);
+      if (canvasFocused) {
+        pkg.step(forward, turn, strafe, jump, dt);
+      }
       const t1 = performance.now();
       const dur = t1 - t0;
 
@@ -363,6 +415,13 @@
   onDestroy(() => {
     if (raf) cancelAnimationFrame(raf);
     if (typeof unbind === "function") unbind();
+    try {
+      if (canvas) {
+        if (clickHandler) canvas.removeEventListener("click", clickHandler);
+        if (onFocusHandler) canvas.removeEventListener("focus", onFocusHandler);
+        if (onBlurHandler) canvas.removeEventListener("blur", onBlurHandler);
+      }
+    } catch (e) {}
   });
 </script>
 
