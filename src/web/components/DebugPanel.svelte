@@ -1,13 +1,13 @@
 <script>
-  import { onMount } from "svelte";
-  import { showStats, lastSeed, showSidebar } from "../stores.js";
+  import { onMount } from 'svelte';
+  import { showStats, lastSeed, showSidebar } from '../stores.js';
 
   export let pkg = null;
 
-  let seedInput = "";
-  let widthInput = "";
-  let heightInput = "";
-  let tracesText = "";
+  let seedInput = '';
+  let widthInput = '';
+  let heightInput = '';
+  let tracesText = '';
 
   // runtime trace recording
   let traces = [];
@@ -17,7 +17,7 @@
   const TRACE_MAX_LINES = 500;
 
   function _updateTracesText() {
-    tracesText = traces.map((t) => JSON.stringify(t)).join("\n");
+    tracesText = traces.map((t) => JSON.stringify(t)).join('\n');
   }
 
   function sampleTrace() {
@@ -42,7 +42,7 @@
       if (traces.length > TRACE_MAX_LINES) traces.shift();
       _updateTracesText();
     } catch (e) {
-      console.error("trace sample failed", e);
+      console.error('trace sample failed', e);
     }
   }
 
@@ -60,14 +60,14 @@
   function clearTrace() {
     traces = [];
     nextTraceId = 1;
-    tracesText = "";
+    tracesText = '';
   }
 
   async function copyTrace() {
     try {
-      await navigator.clipboard.writeText(tracesText || "");
+      await navigator.clipboard.writeText(tracesText || '');
     } catch (e) {
-      console.error("copy failed", e);
+      console.error('copy failed', e);
     }
   }
 
@@ -107,7 +107,7 @@
       if (traces.length > TRACE_MAX_LINES) traces.shift();
       _updateTracesText();
     } catch (e) {
-      console.error("logButtonEvent failed", e);
+      console.error('logButtonEvent failed', e);
     }
   }
 
@@ -118,7 +118,7 @@
       pkg.regenerate_map(seed);
       lastSeed.set(seed);
     } catch (e) {
-      console.error("regenerate_map failed", e);
+      console.error('regenerate_map failed', e);
     }
   }
 
@@ -128,7 +128,7 @@
     const seed = Number(seedInput) || 0;
     if (!pkg) return;
     try {
-      if (typeof pkg.regenerate_map_with_size === "function") {
+      if (typeof pkg.regenerate_map_with_size === 'function') {
         pkg.regenerate_map_with_size(w, h, seed);
       } else {
         pkg.regenerate_map(seed);
@@ -136,19 +136,19 @@
           try {
             const mw = pkg.get_map_w();
             const mh = pkg.get_map_h();
-            console.log("map size after regen:", mw, mh);
+            console.log('map size after regen:', mw, mh);
           } catch (e) {}
         }, 50);
       }
       lastSeed.set(seed);
     } catch (e) {
-      console.error("regen failed", e);
+      console.error('regen failed', e);
     }
   }
 
   onMount(() => {
     const unsubLast = lastSeed.subscribe((v) => {
-      seedInput = v ? String(v) : "";
+      seedInput = v ? String(v) : '';
     });
     return () => {
       stopTrace();
@@ -162,111 +162,81 @@
     <button
       title="Hide panel"
       on:click={() => showSidebar.update((v) => !v)}
-      on:mousedown={() => logButtonEvent("Toggle", "down")}
-      on:mouseup={() => logButtonEvent("Toggle", "up")}
-      on:touchstart={() => logButtonEvent("Toggle", "down")}
-      on:touchend={() => logButtonEvent("Toggle", "up")}
-      style="padding:4px 6px; font-size:12px;">Toggle</button
-    >
-    >
+      on:mousedown={() => logButtonEvent('Toggle', 'down')}
+      on:mouseup={() => logButtonEvent('Toggle', 'up')}
+      on:touchstart={() => logButtonEvent('Toggle', 'down')}
+      on:touchend={() => logButtonEvent('Toggle', 'up')}
+      style="padding:4px 6px; font-size:12px;">
+      Toggle
+    </button>
   </div>
   <div class="row">
     <label for="debug-seed" style="width:64px">Seed</label>
-    <input
-      id="debug-seed"
-      type="text"
-      bind:value={seedInput}
-      placeholder="0 = random"
-    />
+    <input id="debug-seed" type="text" bind:value={seedInput} placeholder="0 = random" />
     <button
       on:click={regenFromInput}
-      on:mousedown={() => logButtonEvent("Regenerate", "down")}
-      on:mouseup={() => logButtonEvent("Regenerate", "up")}
-      on:touchstart={() => logButtonEvent("Regenerate", "down")}
-      on:touchend={() => logButtonEvent("Regenerate", "up")}
-      title="Regenerate using seed">Regenerate</button
-    >
-    >
+      on:mousedown={() => logButtonEvent('Regenerate', 'down')}
+      on:mouseup={() => logButtonEvent('Regenerate', 'up')}
+      on:touchstart={() => logButtonEvent('Regenerate', 'down')}
+      on:touchend={() => logButtonEvent('Regenerate', 'up')}
+      title="Regenerate using seed">
+      Regenerate
+    </button>
   </div>
 
   <div class="row">
     <label for="debug-width" style="width:64px">Size</label>
-    <input
-      id="debug-width"
-      type="number"
-      min="0"
-      bind:value={widthInput}
-      placeholder="width"
-    />
-    <input
-      id="debug-height"
-      type="number"
-      min="0"
-      bind:value={heightInput}
-      placeholder="height"
-    />
+    <input id="debug-width" type="number" min="0" bind:value={widthInput} placeholder="width" />
+    <input id="debug-height" type="number" min="0" bind:value={heightInput} placeholder="height" />
     <button
       on:click={regenWithSize}
-      on:mousedown={() => logButtonEvent("Apply", "down")}
-      on:mouseup={() => logButtonEvent("Apply", "up")}
-      on:touchstart={() => logButtonEvent("Apply", "down")}
-      on:touchend={() => logButtonEvent("Apply", "up")}
-      title="Regenerate with optional size">Apply</button
-    >
-    >
+      on:mousedown={() => logButtonEvent('Apply', 'down')}
+      on:mouseup={() => logButtonEvent('Apply', 'up')}
+      on:touchstart={() => logButtonEvent('Apply', 'down')}
+      on:touchend={() => logButtonEvent('Apply', 'up')}
+      title="Regenerate with optional size">
+      Apply
+    </button>
   </div>
 
   <div class="row">
     <label for="debug-stats" style="width:64px">Stats</label>
     <input id="debug-stats" type="checkbox" bind:checked={$showStats} />
-    <div style="flex:1; text-align:right; font-size:12px; opacity:0.8">
-      FPS / ms overlay
-    </div>
+    <div style="flex:1; text-align:right; font-size:12px; opacity:0.8">FPS / ms overlay</div>
   </div>
 
   <div style="margin-top:6px">
-    <label for="debug-traces" style="display:block; margin-bottom:4px"
-      >Trace</label
-    >
+    <label for="debug-traces" style="display:block; margin-bottom:4px">Trace</label>
     <div style="display:flex; gap:6px; margin-bottom:6px;">
       <button
         on:click={startTrace}
-        on:mousedown={() => logButtonEvent("Start trace", "down")}
-        on:mouseup={() => logButtonEvent("Start trace", "up")}
-        on:touchstart={() => logButtonEvent("Start trace", "down")}
-        on:touchend={() => logButtonEvent("Start trace", "up")}
+        on:mousedown={() => logButtonEvent('Start trace', 'down')}
+        on:mouseup={() => logButtonEvent('Start trace', 'up')}
+        on:touchstart={() => logButtonEvent('Start trace', 'down')}
+        on:touchend={() => logButtonEvent('Start trace', 'up')}
         disabled={traceInterval}
-        title="Start recording traces">Start trace</button
-      >
+        title="Start recording traces">Start</button
       >
       <button
         on:click={stopTrace}
-        on:mousedown={() => logButtonEvent("Stop trace", "down")}
-        on:mouseup={() => logButtonEvent("Stop trace", "up")}
-        on:touchstart={() => logButtonEvent("Stop trace", "down")}
-        on:touchend={() => logButtonEvent("Stop trace", "up")}
+        on:mousedown={() => logButtonEvent('Stop trace', 'down')}
+        on:mouseup={() => logButtonEvent('Stop trace', 'up')}
+        on:touchstart={() => logButtonEvent('Stop trace', 'down')}
+        on:touchend={() => logButtonEvent('Stop trace', 'up')}
         disabled={!traceInterval}
-        title="Stop recording">Stop trace</button
+        title="Stop recording">Stop</button
       >
-      >
-      <button
-        on:click={copyTrace}
-        on:mousedown={() => logButtonEvent("Copy trace", "down")}
-        on:mouseup={() => logButtonEvent("Copy trace", "up")}
-        on:touchstart={() => logButtonEvent("Copy trace", "down")}
-        on:touchend={() => logButtonEvent("Copy trace", "up")}
-        title="Copy full trace to clipboard">Copy trace</button
-      >
-      >
+      <button on:click={copyTrace} title="Copy full trace to clipboard">Copy</button>
       <button
         on:click={clearTrace}
-        on:mousedown={() => logButtonEvent("Clear trace", "down")}
-        on:mouseup={() => logButtonEvent("Clear trace", "up")}
-        on:touchstart={() => logButtonEvent("Clear trace", "down")}
-        on:touchend={() => logButtonEvent("Clear trace", "up")}
-        title="Clear trace textarea">Clear trace</button
+        on:mousedown={() => logButtonEvent('Clear trace', 'down')}
+        on:mouseup={() => logButtonEvent('Clear trace', 'up')}
+        on:touchstart={() => logButtonEvent('Clear trace', 'down')}
+        on:touchend={() => logButtonEvent('Clear trace', 'up')}
+        title="Clear trace textarea"
       >
-      >
+        Clear
+      </button>
       <div style="flex:1; text-align:right; font-size:12px; opacity:0.8">
         Interval: {TRACE_INTERVAL_MS}ms · Max lines: {TRACE_MAX_LINES}
       </div>
@@ -290,8 +260,8 @@
     margin-bottom: 6px;
     align-items: center;
   }
-  input[type="text"],
-  input[type="number"] {
+  input[type='text'],
+  input[type='number'] {
     flex: 1;
     padding: 4px;
   }

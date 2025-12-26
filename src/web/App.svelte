@@ -1,8 +1,8 @@
 <script>
-  import { onMount, onDestroy } from "svelte";
-  import * as wasmMod from "../../pkg/wasm_raycaster.js";
-  import DebugPanel from "./components/DebugPanel.svelte";
-  import { showStats, showSidebar, sidebarWidth, lastSeed } from "./stores.js";
+  import { onMount, onDestroy } from 'svelte';
+  import * as wasmMod from '../../pkg/wasm_raycaster.js';
+  import DebugPanel from './components/DebugPanel.svelte';
+  import { showStats, showSidebar, sidebarWidth, lastSeed } from './stores.js';
 
   function startDrag(e) {
     e.preventDefault();
@@ -16,11 +16,11 @@
       sidebarWidth.set(newW);
     }
     function onUp() {
-      window.removeEventListener("mousemove", onMove);
-      window.removeEventListener("mouseup", onUp);
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
     }
-    window.addEventListener("mousemove", onMove);
-    window.addEventListener("mouseup", onUp);
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
   }
 
   let canvas;
@@ -82,19 +82,19 @@
         mapView = new Int32Array(memory.buffer, mapPtr, mapW * mapH);
       }
     } catch (e) {
-      console.warn("updateMapView failed", e);
+      console.warn('updateMapView failed', e);
       mapView = null;
     }
   }
 
   function drawMapOverlay() {
     updateMapView();
-    const ctx = mapCanvas.getContext("2d");
+    const ctx = mapCanvas.getContext('2d');
     ctx.clearRect(0, 0, mapCanvas.width, mapCanvas.height);
     if (!mapView) {
-      ctx.fillStyle = "#fff";
-      ctx.font = "12px monospace";
-      ctx.fillText("no map", 8, 16);
+      ctx.fillStyle = '#fff';
+      ctx.font = '12px monospace';
+      ctx.fillText('no map', 8, 16);
       return;
     }
     const cellW = mapCanvas.width / mapW;
@@ -102,7 +102,7 @@
     for (let y = 0; y < mapH; y++) {
       for (let x = 0; x < mapW; x++) {
         const v = mapView[y * mapW + x];
-        ctx.fillStyle = v === 1 ? "#888" : "#111";
+        ctx.fillStyle = v === 1 ? '#888' : '#111';
         // Draw with vertical flip so map Y (game) maps to canvas Y correctly
         const drawY = (mapH - 1 - y) * cellH;
         ctx.fillRect(x * cellW, drawY, Math.ceil(cellW), Math.ceil(cellH));
@@ -136,7 +136,7 @@
       ctx.translate(cx, cy);
       const angle = Math.atan2(-dy, dx);
       ctx.rotate(angle);
-      ctx.fillStyle = "#0f0";
+      ctx.fillStyle = '#0f0';
       ctx.beginPath();
       ctx.moveTo(size * 0.6, 0);
       ctx.lineTo(-size * 0.4, -size * 0.4);
@@ -183,8 +183,8 @@
 
         // Draw label
         ctx.fillStyle = color;
-        ctx.font = "10px monospace";
-        ctx.textAlign = "left";
+        ctx.font = '10px monospace';
+        ctx.textAlign = 'left';
         const lx = cx + ax * 0.6 + 4;
         const ly = cy + ay * 0.6 - 2;
         ctx.fillText(label, lx, ly);
@@ -193,17 +193,17 @@
       };
 
       // Draw Fx and Fy with lower opacity
-      drawArrow(Fx, 0, "#ff6666", fxActive ? 0.7 : 0.2, "Fx");
-      drawArrow(0, Fy, "#6666ff", fyActive ? 0.7 : 0.2, "Fy");
+      drawArrow(Fx, 0, '#ff6666', fxActive ? 0.7 : 0.2, 'Fx');
+      drawArrow(0, Fy, '#6666ff', fyActive ? 0.7 : 0.2, 'Fy');
 
       // Draw F (combined) with highlight based on activity
-      drawArrow(Fx, Fy, "#ffff66", fActive ? 1.0 : 0.3, "F");
+      drawArrow(Fx, Fy, '#ffff66', fActive ? 1.0 : 0.3, 'F');
     } catch (e) {}
   }
 
   function createWasmBuffer(ptr, width, height, name) {
     const bytes = width * height * 4;
-    if (typeof ptr !== "number" || !Number.isFinite(ptr)) {
+    if (typeof ptr !== 'number' || !Number.isFinite(ptr)) {
       throw new Error(`${name} ptr is not a number: ${ptr}`);
     }
     const buf = memory.buffer;
@@ -217,21 +217,21 @@
   function bindKeys(target) {
     if (!target) return () => {};
     const down = (e) => {
-      if (e.code === "ArrowUp" || e.code === "KeyW") forward = 1;
-      if (e.code === "ArrowDown" || e.code === "KeyS") forward = -1;
-      if (e.code === "ArrowLeft" || e.code === "KeyA") turn = 1;
-      if (e.code === "ArrowRight" || e.code === "KeyD") turn = -1;
-      if (e.code === "Comma") strafe = -1;
-      if (e.code === "Period") strafe = 1;
-      if (e.code === "Space") {
+      if (e.code === 'ArrowUp' || e.code === 'KeyW') forward = 1;
+      if (e.code === 'ArrowDown' || e.code === 'KeyS') forward = -1;
+      if (e.code === 'ArrowLeft' || e.code === 'KeyA') turn = 1;
+      if (e.code === 'ArrowRight' || e.code === 'KeyD') turn = -1;
+      if (e.code === 'Comma') strafe = -1;
+      if (e.code === 'Period') strafe = 1;
+      if (e.code === 'Space') {
         jump = 1;
         // prevent page scroll when space pressed while focused
         e.preventDefault();
       }
-      if (e.code === "ShiftLeft") {
+      if (e.code === 'ShiftLeft') {
         walking = true;
       }
-      if (e.code === "KeyM") {
+      if (e.code === 'KeyM') {
         try {
           pkg.regenerate_map(0);
           setTimeout(() => drawMapOverlay(), 10);
@@ -239,37 +239,37 @@
       }
     };
     const up = (e) => {
-      if (e.code === "ArrowUp" || e.code === "KeyW") {
+      if (e.code === 'ArrowUp' || e.code === 'KeyW') {
         if (forward > 0) forward = 0;
       }
-      if (e.code === "ArrowDown" || e.code === "KeyS") {
+      if (e.code === 'ArrowDown' || e.code === 'KeyS') {
         if (forward < 0) forward = 0;
       }
-      if (e.code === "ArrowLeft" || e.code === "KeyA") {
+      if (e.code === 'ArrowLeft' || e.code === 'KeyA') {
         if (turn > 0) turn = 0;
       }
-      if (e.code === "ArrowRight" || e.code === "KeyD") {
+      if (e.code === 'ArrowRight' || e.code === 'KeyD') {
         if (turn < 0) turn = 0;
       }
-      if (e.code === "Comma") {
+      if (e.code === 'Comma') {
         if (strafe < 0) strafe = 0;
       }
-      if (e.code === "Period") {
+      if (e.code === 'Period') {
         if (strafe > 0) strafe = 0;
       }
-      if (e.code === "Space") {
+      if (e.code === 'Space') {
         if (jump > 0) jump = 0;
         e.preventDefault();
       }
-      if (e.code === "ShiftLeft") {
+      if (e.code === 'ShiftLeft') {
         walking = false;
       }
     };
-    target.addEventListener("keydown", down);
-    target.addEventListener("keyup", up);
+    target.addEventListener('keydown', down);
+    target.addEventListener('keyup', up);
     return () => {
-      target.removeEventListener("keydown", down);
-      target.removeEventListener("keyup", up);
+      target.removeEventListener('keydown', down);
+      target.removeEventListener('keyup', up);
     };
   }
 
@@ -288,82 +288,58 @@
     canvas.style.width = `${w * 3}px`;
     canvas.style.height = `${h * 3}px`;
 
-    const ctx = canvas.getContext("2d");
+    const ctx = canvas.getContext('2d');
 
     // textures
     async function loadTexture(src) {
       const img = new Image();
       img.src = src;
       await img.decode();
-      const c = document.createElement("canvas");
+      const c = document.createElement('canvas');
       c.width = img.width;
       c.height = img.height;
-      const cx = c.getContext("2d");
+      const cx = c.getContext('2d');
       cx.drawImage(img, 0, 0);
       const imgData = cx.getImageData(0, 0, c.width, c.height);
       return { width: img.width, height: img.height, data: imgData.data };
     }
 
     const [wallTex, floorTex] = await Promise.all([
-      loadTexture("../../assets/wall.png"),
-      loadTexture("../../assets/floor.png"),
+      loadTexture('../../assets/wall.png'),
+      loadTexture('../../assets/floor.png'),
     ]);
-    const skyTex = await loadTexture("../../assets/skybox.png");
+    const skyTex = await loadTexture('../../assets/skybox.png');
 
     // allocate in wasm
     const wallTexPtr = pkg.alloc_wall_texture(wallTex.width, wallTex.height);
-    const floorTexPtr = pkg.alloc_floor_texture(
-      floorTex.width,
-      floorTex.height
-    );
+    const floorTexPtr = pkg.alloc_floor_texture(floorTex.width, floorTex.height);
     const skyTexPtr = pkg.alloc_sky_texture(skyTex.width, skyTex.height);
 
-    const wallMemory = createWasmBuffer(
-      wallTexPtr,
-      wallTex.width,
-      wallTex.height,
-      "wall"
-    );
+    const wallMemory = createWasmBuffer(wallTexPtr, wallTex.width, wallTex.height, 'wall');
     const wallSrc = new Uint8Array(
       wallTex.data.buffer,
       wallTex.data.byteOffset || 0,
       wallTex.data.byteLength || wallTex.data.length
     );
-    wallMemory.set(
-      wallSrc.subarray(0, Math.min(wallSrc.length, wallMemory.length))
-    );
+    wallMemory.set(wallSrc.subarray(0, Math.min(wallSrc.length, wallMemory.length)));
     pkg.set_wall_texture_size(wallTex.width, wallTex.height);
 
-    const floorMemory = createWasmBuffer(
-      floorTexPtr,
-      floorTex.width,
-      floorTex.height,
-      "floor"
-    );
+    const floorMemory = createWasmBuffer(floorTexPtr, floorTex.width, floorTex.height, 'floor');
     const floorSrc = new Uint8Array(
       floorTex.data.buffer,
       floorTex.data.byteOffset || 0,
       floorTex.data.byteLength || floorTex.data.length
     );
-    floorMemory.set(
-      floorSrc.subarray(0, Math.min(floorSrc.length, floorMemory.length))
-    );
+    floorMemory.set(floorSrc.subarray(0, Math.min(floorSrc.length, floorMemory.length)));
     pkg.set_floor_texture_size(floorTex.width, floorTex.height);
 
-    const skyMemory = createWasmBuffer(
-      skyTexPtr,
-      skyTex.width,
-      skyTex.height,
-      "sky"
-    );
+    const skyMemory = createWasmBuffer(skyTexPtr, skyTex.width, skyTex.height, 'sky');
     const skySrc = new Uint8Array(
       skyTex.data.buffer,
       skyTex.data.byteOffset || 0,
       skyTex.data.byteLength || skyTex.data.length
     );
-    skyMemory.set(
-      skySrc.subarray(0, Math.min(skySrc.length, skyMemory.length))
-    );
+    skyMemory.set(skySrc.subarray(0, Math.min(skySrc.length, skyMemory.length)));
     pkg.set_sky_texture_size(skyTex.width, skyTex.height);
 
     fbPtr = pkg.get_framebuffer_ptr();
@@ -376,7 +352,7 @@
       canvas.tabIndex = 0;
       // focus on click for convenience
       clickHandler = () => canvas.focus();
-      canvas.addEventListener("click", clickHandler);
+      canvas.addEventListener('click', clickHandler);
 
       onFocusHandler = () => {
         canvasFocused = true;
@@ -386,7 +362,7 @@
       onBlurHandler = () => {
         canvasFocused = false;
         // remove key handlers
-        if (typeof unbind === "function") {
+        if (typeof unbind === 'function') {
           unbind();
           unbind = null;
         }
@@ -396,8 +372,8 @@
         strafe = 0;
         jump = 0;
       };
-      canvas.addEventListener("focus", onFocusHandler);
-      canvas.addEventListener("blur", onBlurHandler);
+      canvas.addEventListener('focus', onFocusHandler);
+      canvas.addEventListener('blur', onBlurHandler);
       // Focus the canvas by default on initial load. Use setTimeout to
       // avoid potential HMR/ref race conditions where focus may fail.
       try {
@@ -406,7 +382,7 @@
         }, 0);
       } catch (e) {}
     } else {
-      console.warn("App.svelte: canvas ref is null in onMount");
+      console.warn('App.svelte: canvas ref is null in onMount');
     }
 
     // record the initial seed used by wasm.init() as a best-effort
@@ -419,14 +395,13 @@
       try {
         updateMapView();
         if (!mapView) {
-          console.log("no map available");
+          console.log('no map available');
           return;
         }
         const rows = [];
         for (let y = 0; y < mapH; y++) {
-          let row = "";
-          for (let x = 0; x < mapW; x++)
-            row += mapView[y * mapW + x] === 1 ? "#" : ".";
+          let row = '';
+          for (let x = 0; x < mapW; x++) row += mapView[y * mapW + x] === 1 ? '#' : '.';
           rows.push(row);
         }
         try {
@@ -434,9 +409,9 @@
           const py = pkg.get_pos_y();
           console.log(`player @ ${px.toFixed(2)}, ${py.toFixed(2)}`);
         } catch (e) {}
-        console.log(rows.join("\n"));
+        console.log(rows.join('\n'));
       } catch (e) {
-        console.error("printMap failed", e);
+        console.error('printMap failed', e);
       }
     };
 
@@ -478,10 +453,10 @@
       // small overlay (toggleable)
       if ($showStats) {
         ctx.save();
-        ctx.fillStyle = "rgba(0,0,0,0.45)";
+        ctx.fillStyle = 'rgba(0,0,0,0.45)';
         ctx.fillRect(4, 4, 120, 20);
-        ctx.fillStyle = "#0f0";
-        ctx.font = "12px monospace";
+        ctx.fillStyle = '#0f0';
+        ctx.font = '12px monospace';
         const txt = `${perfFps.toFixed(1)} fps ${perfMs.toFixed(1)} ms`;
         ctx.fillText(txt, 8, 18);
         ctx.restore();
@@ -495,12 +470,12 @@
 
   onDestroy(() => {
     if (raf) cancelAnimationFrame(raf);
-    if (typeof unbind === "function") unbind();
+    if (typeof unbind === 'function') unbind();
     try {
       if (canvas) {
-        if (clickHandler) canvas.removeEventListener("click", clickHandler);
-        if (onFocusHandler) canvas.removeEventListener("focus", onFocusHandler);
-        if (onBlurHandler) canvas.removeEventListener("blur", onBlurHandler);
+        if (clickHandler) canvas.removeEventListener('click', clickHandler);
+        if (onFocusHandler) canvas.removeEventListener('focus', onFocusHandler);
+        if (onBlurHandler) canvas.removeEventListener('blur', onBlurHandler);
       }
     } catch (e) {}
   });
@@ -512,10 +487,7 @@
   </div>
 
   {#if $showSidebar}
-    <div
-      id="sidebarWrapper"
-      style="display:flex; flex-direction:column; gap:8px;"
-    >
+    <div id="sidebarWrapper" style="display:flex; flex-direction:column; gap:8px;">
       <aside
         id="sidebar"
         style="width: {$sidebarWidth}px; transition: width 160ms ease; position:relative;"
@@ -528,16 +500,14 @@
         ></button>
         <DebugPanel {pkg} />
       </aside>
-      <canvas bind:this={mapCanvas} id="mapOverlay" width="160" height="160"
-      ></canvas>
+      <canvas bind:this={mapCanvas} id="mapOverlay" width="160" height="160"></canvas>
     </div>
   {:else}
     <button
       id="openSidebar"
       on:click={() => showSidebar.set(true)}
       title="Open debug panel"
-      style="position:fixed; right:12px; top:12px; z-index:40; padding:6px 8px;"
-      >Open Panel</button
+      style="position:fixed; right:12px; top:12px; z-index:40; padding:6px 8px;">Open Panel</button
     >
   {/if}
 </div>

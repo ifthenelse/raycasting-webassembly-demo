@@ -597,7 +597,7 @@ pub fn step(forward: f32, turn: f32, strafe: f32, jump: f32, dt: f32) {
         None
     }
     
-    // Vector projection-based wall sliding
+    // Vector projection-based wall sliding with iterative corner handling
     // Decomposes movement vector into normal and parallel components relative to wall
     fn slide_move(start_x: f32, start_y: f32, dx: f32, dy: f32, radius: f32) -> (f32, f32) {
         let target_x = start_x + dx;
@@ -608,44 +608,61 @@ pub fn step(forward: f32, turn: f32, strafe: f32, jump: f32, dt: f32) {
             return (target_x, target_y);
         }
         
-        // Collision detected - find wall normal and project movement onto wall
-        if let Some((wall_nx, wall_ny)) = detect_wall_normal(target_x, target_y, radius) {
-            // Compute dot product: movement · normal
-            let dot = dx * wall_nx + dy * wall_ny;
+        // Collision detected - slide along wall(s) iteratively
+        // At corners, we may need to slide along first wall, then second wall
+        let mut current_dx = dx;
+        let mut current_dy = dy;
+        let mut result_x = start_x;
+        let mut result_y = start_y;
+        
+        // Try up to 2 iterations (handles corners with 2 perpendicular walls)
+        for _ in 0..2 {
+            let try_x = start_x + current_dx;
+            let try_y = start_y + current_dy;
             
-            // Project movement onto wall by removing normal component
-            // parallel = movement - (movement · normal) * normal
-            let slide_dx = dx - dot * wall_nx;
-            let slide_dy = dy - dot * wall_ny;
-            
-            let slide_x = start_x + slide_dx;
-            let slide_y = start_y + slide_dy;
-            
-            // Try sliding movement
-            if is_position_clear(slide_x, slide_y, radius) {
-                return (slide_x, slide_y);
+            if is_position_clear(try_x, try_y, radius) {
+                result_x = try_x;
+                result_y = try_y;
+                break;
             }
             
-            // If sliding also fails (corner), try smaller fraction of slide
-            for &frac in &[0.5, 0.25, 0.1] {
-                let tiny_x = start_x + slide_dx * frac;
-                let tiny_y = start_y + slide_dy * frac;
-                if is_position_clear(tiny_x, tiny_y, radius) {
-                    return (tiny_x, tiny_y);
+            // Hit a wall - find normal and project movement
+            if let Some((wall_nx, wall_ny)) = detect_wall_normal(try_x, try_y, radius) {
+                // Compute dot product: movement · normal
+                let dot = current_dx * wall_nx + current_dy * wall_ny;
+                
+                // Project movement onto wall by removing normal component
+                // parallel = movement - (movement · normal) * normal
+                current_dx = current_dx - dot * wall_nx;
+                current_dy = current_dy - dot * wall_ny;
+                
+                let slide_x = start_x + current_dx;
+                let slide_y = start_y + current_dy;
+                
+                // Check if this slide works
+                if is_position_clear(slide_x, slide_y, radius) {
+                    result_x = slide_x;
+                    result_y = slide_y;
+                    break;
                 }
+                // If not, loop will try again with the new direction
+            } else {
+                // No wall detected but still colliding - stuck, give up
+                break;
             }
         }
         
-        // Fallback: try axis-aligned movement
-        if is_position_clear(target_x, start_y, radius) {
-            return (target_x, start_y);
-        }
-        if is_position_clear(start_x, target_y, radius) {
-            return (start_x, target_y);
+        // If iterative sliding didn't work, try simple axis-aligned fallback
+        if result_x == start_x && result_y == start_y {
+            if is_position_clear(target_x, start_y, radius) {
+                return (target_x, start_y);
+            }
+            if is_position_clear(start_x, target_y, radius) {
+                return (start_x, target_y);
+            }
         }
         
-        // Completely stuck - don't move
-        (start_x, start_y)
+        (result_x, result_y)
     }
     
     // Movement speeds are in world units per second, but code previously
@@ -654,7 +671,8 @@ pub fn step(forward: f32, turn: f32, strafe: f32, jump: f32, dt: f32) {
     let move_speed = 2.5; // meters per second (forward/back)
     let rot_speed = 2.0; // radians per second
     // collision buffer in meters: player stops this far before wall
-    let collide_radius: f32 = 0.2;
+    // Reduced from 0.2 to 0.15 to allow tighter corner navigation
+    let collide_radius: f32 = 0.15;
     // More realistic jump physics (m/s and m/s^2). Increase gravity
     // to make the arc quicker while keeping a reasonable apex.
     let jump_initial_v: f32 = 4.0; // m/s
