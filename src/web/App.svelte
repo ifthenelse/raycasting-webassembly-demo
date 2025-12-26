@@ -3,7 +3,6 @@
   import * as wasmMod from "../../pkg/wasm_raycaster.js";
   import DebugPanel from "./components/DebugPanel.svelte";
   import { showStats, showSidebar, sidebarWidth, lastSeed } from "./stores.js";
-  let dragging = false;
 
   function startDrag(e) {
     e.preventDefault();
@@ -431,24 +430,11 @@
     max-width: calc(100vw - 380px);
     height: auto;
   }
-  #overlay {
-    position: absolute;
-    left: 8px;
-    top: 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  }
   #mapOverlay {
     width: 160px;
     height: 160px;
     border: 1px solid #333;
     background: #000;
-  }
-  #sidebar {
-    width: 500px;
-    max-height: calc(100vh - 24px);
-    overflow: auto;
   }
   #sidebarHandle {
     position: absolute;
