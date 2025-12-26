@@ -1,0 +1,10 @@
+node_modules
+pkg
+target
+dist
+.git
+.vscode
+screenshots
+assets/**/*.map
+**/*.wasm
+**/*.d.ts
