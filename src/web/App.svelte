@@ -37,6 +37,7 @@
   let turn = 0;
   let strafe = 0;
   let jump = 0;
+  let walking = false;
 
   let raf = null;
   let lastFrameTime = performance.now();
@@ -102,7 +103,9 @@
       for (let x = 0; x < mapW; x++) {
         const v = mapView[y * mapW + x];
         ctx.fillStyle = v === 1 ? "#888" : "#111";
-        ctx.fillRect(x * cellW, y * cellH, Math.ceil(cellW), Math.ceil(cellH));
+        // Draw with vertical flip so map Y (game) maps to canvas Y correctly
+        const drawY = (mapH - 1 - y) * cellH;
+        ctx.fillRect(x * cellW, drawY, Math.ceil(cellW), Math.ceil(cellH));
       }
     }
     try {
@@ -110,12 +113,28 @@
       const py = pkg.get_pos_y();
       const dx = pkg.get_dir_x();
       const dy = pkg.get_dir_y();
+      const px_local = pkg.get_plane_x();
+      const py_local = pkg.get_plane_y();
+      // Map/game Y axis is upward; canvas Y axis is downward — flip Y when drawing
       const cx = px * cellW;
-      const cy = py * cellH;
+      const cy = (mapH - py) * cellH;
       const size = Math.max(4, Math.min(cellW, cellH) * 0.6);
+
+      // Calculate movement force components based on inputs
+      // F = forward * direction + strafe * plane
+      const move_speed = 2.5; // must match src/lib.rs
+      const Fx = (forward * dx + strafe * px_local) * move_speed;
+      const Fy = (forward * dy + strafe * py_local) * move_speed;
+
+      // Determine which components are active (non-negligible)
+      const fxActive = Math.abs(Fx) > 0.01;
+      const fyActive = Math.abs(Fy) > 0.01;
+      const fActive = Math.abs(Fx) > 0.01 || Math.abs(Fy) > 0.01;
+
+      // Draw player direction triangle (invert Y axis for angle)
       ctx.save();
       ctx.translate(cx, cy);
-      const angle = Math.atan2(dy, dx);
+      const angle = Math.atan2(-dy, dx);
       ctx.rotate(angle);
       ctx.fillStyle = "#0f0";
       ctx.beginPath();
@@ -125,6 +144,60 @@
       ctx.closePath();
       ctx.fill();
       ctx.restore();
+
+      // Helper: draw arrow from center
+      const drawArrow = (fx, fy, color, opacity, label) => {
+        if (Math.abs(fx) < 0.001 && Math.abs(fy) < 0.001) return;
+
+        const scale = 20; // pixels per unit of force
+        const ax = fx * scale;
+        // invert vertical component for canvas coordinates
+        const ay = -fy * scale;
+        const len = Math.sqrt(ax * ax + ay * ay);
+        if (len < 1) return;
+
+        ctx.save();
+        ctx.globalAlpha = opacity;
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.lineTo(cx + ax, cy + ay);
+        ctx.stroke();
+
+        // Draw arrowhead
+        const arrowSize = 4;
+        const arrowAngle = Math.atan2(ay, ax);
+        ctx.beginPath();
+        ctx.moveTo(cx + ax, cy + ay);
+        ctx.lineTo(
+          cx + ax - arrowSize * Math.cos(arrowAngle - Math.PI / 6),
+          cy + ay - arrowSize * Math.sin(arrowAngle - Math.PI / 6)
+        );
+        ctx.moveTo(cx + ax, cy + ay);
+        ctx.lineTo(
+          cx + ax - arrowSize * Math.cos(arrowAngle + Math.PI / 6),
+          cy + ay - arrowSize * Math.sin(arrowAngle + Math.PI / 6)
+        );
+        ctx.stroke();
+
+        // Draw label
+        ctx.fillStyle = color;
+        ctx.font = "10px monospace";
+        ctx.textAlign = "left";
+        const lx = cx + ax * 0.6 + 4;
+        const ly = cy + ay * 0.6 - 2;
+        ctx.fillText(label, lx, ly);
+
+        ctx.restore();
+      };
+
+      // Draw Fx and Fy with lower opacity
+      drawArrow(Fx, 0, "#ff6666", fxActive ? 0.7 : 0.2, "Fx");
+      drawArrow(0, Fy, "#6666ff", fyActive ? 0.7 : 0.2, "Fy");
+
+      // Draw F (combined) with highlight based on activity
+      drawArrow(Fx, Fy, "#ffff66", fActive ? 1.0 : 0.3, "F");
     } catch (e) {}
   }
 
@@ -155,6 +228,9 @@
         // prevent page scroll when space pressed while focused
         e.preventDefault();
       }
+      if (e.code === "ShiftLeft") {
+        walking = true;
+      }
       if (e.code === "KeyM") {
         try {
           pkg.regenerate_map(0);
@@ -184,6 +260,9 @@
       if (e.code === "Space") {
         if (jump > 0) jump = 0;
         e.preventDefault();
+      }
+      if (e.code === "ShiftLeft") {
+        walking = false;
       }
     };
     target.addEventListener("keydown", down);
@@ -376,7 +455,9 @@
 
       const t0 = performance.now();
       if (canvasFocused) {
-        pkg.step(forward, turn, strafe, jump, dt);
+        const effForward = walking ? forward * 0.5 : forward;
+        const effStrafe = walking ? strafe * 0.5 : strafe;
+        pkg.step(effForward, turn, effStrafe, jump, dt);
       }
       const t1 = performance.now();
       const dur = t1 - t0;
