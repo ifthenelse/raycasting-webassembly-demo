@@ -18,37 +18,30 @@ Install
 npm install
 ```
 
-Build
+Build & scripts
 
-1. Build the WebAssembly package (produces `pkg/`):
-
-```bash
-npm run build:wasm
-```
-
-2. Build the web app (bundles assets into `dist/`):
+First install dependencies:
 
 ```bash
-npm run build
+npm install
 ```
 
-Development
+Available npm scripts (run from project root):
 
-- Start the dev server (Vite):
+- `npm run build:wasm` — compile the Rust crate to WebAssembly and emit `pkg/` (uses `wasm-pack`).
+- `npm run build:web` — bundle the frontend with Vite into `dist/`.
+- `npm run build` — run `build:wasm` then `build:web` (production build).
+- `npm run dev` — start the guarded dev server (checks port and runs Vite). Use this normally for local development.
+- `npm run dev:internal` — run `vite` directly (bypass the guard script).
+- `npm run preview` — serve the `dist/` output for a production preview (`vite preview`).
+- `npm run test` — run the lightweight JS test harness in `tools/run_tests.js`.
+- `npm run format` — format the codebase with Prettier (JS/Svelte/JSON/CSS/HTML/MD).
 
-```bash
-npm run dev
-```
+Notes:
 
-Open the URL printed by Vite (usually `http://localhost:5173/`). If `pkg/` is
-missing (fresh checkout), run `npm run build:wasm` before `npm run dev` so the
-frontend can import the generated WASM glue.
-
-Preview production build
-
-```bash
-npm run preview
-```
+- On a fresh checkout, or after changing Rust dependencies, run `npm run build:wasm` first so `pkg/` exists for the frontend imports. `npm run build` will do both steps.
+- Use `npm run dev` for iterative development; the guard script prevents accidentally starting a second dev server on the same port.
+- To preview the production bundle after `npm run build`, run `npm run preview` and open the URL shown by Vite.
 
 Project layout
 
