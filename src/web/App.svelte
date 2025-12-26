@@ -1,10 +1,31 @@
 <script>
   import { onMount, onDestroy } from "svelte";
   import * as wasmMod from "../../pkg/wasm_raycaster.js";
+  import DebugPanel from "./components/DebugPanel.svelte";
+  import { showStats, showSidebar, sidebarWidth, lastSeed } from "./stores.js";
+  let dragging = false;
+
+  function startDrag(e) {
+    e.preventDefault();
+    const startX = e.clientX;
+    let startW;
+    const unsub = sidebarWidth.subscribe((v) => (startW = v));
+    unsub();
+    function onMove(ev) {
+      const dx = startX - ev.clientX; // dragging left increases width
+      const newW = Math.max(220, Math.min(900, startW + dx));
+      sidebarWidth.set(newW);
+    }
+    function onUp() {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    }
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }
 
   let canvas;
   let mapCanvas;
-  let regenBtn;
 
   let pkg;
   let wasmExports;
@@ -84,13 +105,23 @@
     try {
       const px = pkg.get_pos_x();
       const py = pkg.get_pos_y();
+      const dx = pkg.get_dir_x();
+      const dy = pkg.get_dir_y();
+      const cx = px * cellW;
+      const cy = py * cellH;
+      const size = Math.max(4, Math.min(cellW, cellH) * 0.6);
+      ctx.save();
+      ctx.translate(cx, cy);
+      const angle = Math.atan2(dy, dx);
+      ctx.rotate(angle);
       ctx.fillStyle = "#0f0";
-      ctx.fillRect(
-        (px - 0.25) * cellW,
-        (py - 0.25) * cellH,
-        Math.ceil(cellW * 0.5),
-        Math.ceil(cellH * 0.5)
-      );
+      ctx.beginPath();
+      ctx.moveTo(size * 0.6, 0);
+      ctx.lineTo(-size * 0.4, -size * 0.4);
+      ctx.lineTo(-size * 0.4, size * 0.4);
+      ctx.closePath();
+      ctx.fill();
+      ctx.restore();
     } catch (e) {}
   }
 
@@ -250,15 +281,10 @@
 
     unbind = bindKeys();
 
-    // regen button handler
-    regenBtn.addEventListener("click", () => {
-      try {
-        pkg.regenerate_map(0);
-        setTimeout(() => drawMapOverlay(), 10);
-      } catch (e) {
-        console.error(e);
-      }
-    });
+    // record the initial seed used by wasm.init() as a best-effort
+    try {
+      lastSeed.set(Date.now());
+    } catch (e) {}
 
     // expose printMap
     window.printMap = function printMap() {
@@ -317,15 +343,17 @@
       ctx.putImageData(img, 0, 0);
       drawMapOverlay();
 
-      // small overlay
-      ctx.save();
-      ctx.fillStyle = "rgba(0,0,0,0.45)";
-      ctx.fillRect(4, 4, 120, 20);
-      ctx.fillStyle = "#0f0";
-      ctx.font = "12px monospace";
-      const txt = `${perfFps.toFixed(1)} fps ${perfMs.toFixed(1)} ms`;
-      ctx.fillText(txt, 8, 18);
-      ctx.restore();
+      // small overlay (toggleable)
+      if ($showStats) {
+        ctx.save();
+        ctx.fillStyle = "rgba(0,0,0,0.45)";
+        ctx.fillRect(4, 4, 120, 20);
+        ctx.fillStyle = "#0f0";
+        ctx.font = "12px monospace";
+        const txt = `${perfFps.toFixed(1)} fps ${perfMs.toFixed(1)} ms`;
+        ctx.fillText(txt, 8, 18);
+        ctx.restore();
+      }
 
       raf = requestAnimationFrame(frame);
     }
@@ -340,16 +368,39 @@
 </script>
 
 <div id="container">
-  <canvas bind:this={canvas} id="screen"></canvas>
-  <div style="position: absolute; left: 8px; top: 8px;">
-    <canvas bind:this={mapCanvas} id="mapOverlay" width="160" height="160"
-    ></canvas>
-    <div style="margin-top:6px; text-align:left;">
-      <button bind:this={regenBtn} style="padding:6px 8px; font:12px monospace;"
-        >Regenerate Map</button
-      >
-    </div>
+  <div id="stage">
+    <canvas bind:this={canvas} id="screen"></canvas>
   </div>
+
+  {#if $showSidebar}
+    <div
+      id="sidebarWrapper"
+      style="display:flex; flex-direction:column; gap:8px;"
+    >
+      <aside
+        id="sidebar"
+        style="width: {$sidebarWidth}px; transition: width 160ms ease; position:relative;"
+      >
+        <button
+          id="sidebarHandle"
+          aria-label="Resize sidebar"
+          on:mousedown={startDrag}
+          title="Drag to resize"
+        ></button>
+        <DebugPanel {pkg} />
+      </aside>
+      <canvas bind:this={mapCanvas} id="mapOverlay" width="160" height="160"
+      ></canvas>
+    </div>
+  {:else}
+    <button
+      id="openSidebar"
+      on:click={() => showSidebar.set(true)}
+      title="Open debug panel"
+      style="position:fixed; right:12px; top:12px; z-index:40; padding:6px 8px;"
+      >Open Panel</button
+    >
+  {/if}
 </div>
 
 <style>
@@ -359,16 +410,59 @@
   }
   #container {
     display: flex;
-    align-items: center;
+    gap: 16px;
+    align-items: flex-start;
     justify-content: center;
     height: 100vh;
+    padding: 12px;
+    box-sizing: border-box;
   }
-  canvas {
+  #stage {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 1 1 auto;
+  }
+  #stage #screen {
     image-rendering: pixelated;
     border: 2px solid #444;
+    display: block;
+    max-width: calc(100vw - 380px);
+    height: auto;
+  }
+  #overlay {
+    position: absolute;
+    left: 8px;
+    top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
   }
   #mapOverlay {
     width: 160px;
     height: 160px;
+    border: 1px solid #333;
+    background: #000;
+  }
+  #sidebar {
+    width: 500px;
+    max-height: calc(100vh - 24px);
+    overflow: auto;
+  }
+  #sidebarHandle {
+    position: absolute;
+    left: -8px;
+    top: 0;
+    bottom: 0;
+    width: 12px;
+    background: transparent;
+    border: 0;
+    cursor: ew-resize;
+  }
+  #sidebar {
+    width: 500px;
+    max-height: calc(100vh - 24px);
+    overflow: auto;
   }
 </style>

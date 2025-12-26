@@ -728,3 +728,34 @@ pub fn regenerate_map(seed: u32) {
 
     render_scene();
 }
+
+#[wasm_bindgen]
+pub fn regenerate_map_with_size(w: u32, h: u32, seed: u32) {
+    let mut s = if seed == 0 { date_now() as u32 } else { seed };
+    let map_w = if w == 0 { 8 + (lcg_next(&mut s) % 13) as usize } else { w as usize };
+    let map_h = if h == 0 { 8 + (lcg_next(&mut s) % 9) as usize } else { h as usize };
+    generate_map(map_w, map_h, s);
+
+    unsafe {
+        // ensure player not inside wall
+        let mut sx = POS_X as i32;
+        let mut sy = POS_Y as i32;
+        if map_at(sx, sy) != 0 {
+            let mw = MAP_W as i32;
+            let mh = MAP_H as i32;
+            'outer4: for y in 1..(mh - 1) {
+                for x in 1..(mw - 1) {
+                    if map_at(x, y) == 0 {
+                        sx = x;
+                        sy = y;
+                        break 'outer4;
+                    }
+                }
+            }
+            POS_X = sx as f32 + 0.5;
+            POS_Y = sy as f32 + 0.5;
+        }
+    }
+
+    render_scene();
+}
