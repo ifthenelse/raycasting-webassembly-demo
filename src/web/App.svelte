@@ -88,8 +88,11 @@
   }
 
   function drawMapOverlay() {
+    // Guard: mapCanvas may not exist if the sidebar is hidden
+    if (!mapCanvas) return;
     updateMapView();
-    const ctx = mapCanvas.getContext('2d');
+    const ctx = mapCanvas.getContext && mapCanvas.getContext('2d');
+    if (!ctx) return;
     ctx.clearRect(0, 0, mapCanvas.width, mapCanvas.height);
     if (!mapView) {
       ctx.fillStyle = '#fff';
