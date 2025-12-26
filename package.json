@@ -13,7 +13,8 @@
     "preview": "vite preview",
     "build:wasm": "wasm-pack build --target web --out-dir pkg",
     "build": "npm run build:wasm && npm run build:web",
-    "test": "node tools/run_tests.js"
+    "test": "node tools/run_tests.js",
+    "format": "prettier --write \"**/*.{js,svelte,json,css,html,md}\""
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^6.2.1",
