@@ -213,7 +213,8 @@ fn render_scene() {
     // pixels per meter: scale physical jump height to screen offset
     let jump_px_scale: f32 = 50.0;
     // Camera center determined by CAMERA_HEIGHT_FACTOR (0.0..1.0)
-    let center: f32 = (HEIGHT as f32) * unsafe { CAMERA_HEIGHT_FACTOR } + unsafe { JUMP_OFFSET * jump_px_scale };
+    let base_center: f32 = (HEIGHT as f32) * unsafe { CAMERA_HEIGHT_FACTOR };
+    let center: f32 = base_center + unsafe { JUMP_OFFSET * jump_px_scale };
 
     // store per-column wall bottom (draw_end) so floor rendering can be clipped to walls
     // store per-column wall top (draw_start) so ceiling rendering can be clipped to walls
@@ -241,8 +242,9 @@ fn render_scene() {
                 let mut u = angle / (2.0 * std::f32::consts::PI) + 0.5;
                 if !u.is_finite() { u = 0.0; }
                 // vertical mapping: map screen Y to texture V (0..1)
-                // flip so image top corresponds to top of sky area
-                let mut v = (y as f32 / center).max(0.0).min(1.0);
+                // Use base_center (without jump offset) to maintain consistent sky proportions
+                // when jumping. This keeps the sky texture from stretching during jump.
+                let mut v = (y as f32 / base_center).max(0.0).min(1.0);
                 if !v.is_finite() { v = 0.0; }
 
                 unsafe {
