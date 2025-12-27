@@ -516,6 +516,40 @@ pub fn set_sky_texture_size(w: usize, h: usize) {
 }
 
 #[wasm_bindgen]
+pub fn get_ceiling_texture_ptr() -> *mut u8 {
+    #[allow(static_mut_refs)]
+    unsafe {
+        if let Some(ref mut v) = CEILING_TEX_VEC {
+            v.as_mut_ptr()
+        } else {
+            CEILING_TEX_BUF.as_mut_ptr()
+        }
+    }
+}
+
+#[wasm_bindgen]
+pub fn alloc_ceiling_texture(w: usize, h: usize) -> *mut u8 {
+    let bytes = match w.checked_mul(h).and_then(|p| p.checked_mul(4)) {
+        Some(b) => b,
+        None => return std::ptr::null_mut(),
+    };
+    unsafe {
+        CEILING_TEX_VEC = Some(vec![0u8; bytes]);
+        CEILING_TEX_W = w;
+        CEILING_TEX_H = h;
+        CEILING_TEX_VEC.as_mut().unwrap().as_mut_ptr()
+    }
+}
+
+#[wasm_bindgen]
+pub fn set_ceiling_texture_size(w: usize, h: usize) {
+    unsafe {
+        CEILING_TEX_W = w;
+        CEILING_TEX_H = h;
+    }
+}
+
+#[wasm_bindgen]
 pub fn init() {
     // Generate a new random map on each init (seeded from Date.now())
     let mut seed = date_now() as u32;

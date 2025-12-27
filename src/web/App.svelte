@@ -376,11 +376,13 @@
       loadTexture('../../assets/floor.png'),
     ]);
     const skyTex = await loadTexture('../../assets/skybox.png');
+    const ceilingTex = await loadTexture('../../assets/ceiling.png');
 
     // allocate in wasm
     const wallTexPtr = pkg.alloc_wall_texture(wallTex.width, wallTex.height);
     const floorTexPtr = pkg.alloc_floor_texture(floorTex.width, floorTex.height);
     const skyTexPtr = pkg.alloc_sky_texture(skyTex.width, skyTex.height);
+    const ceilingTexPtr = pkg.alloc_ceiling_texture(ceilingTex.width, ceilingTex.height);
 
     const wallMemory = createWasmBuffer(wallTexPtr, wallTex.width, wallTex.height, 'wall');
     const wallSrc = new Uint8Array(
@@ -408,6 +410,15 @@
     );
     skyMemory.set(skySrc.subarray(0, Math.min(skySrc.length, skyMemory.length)));
     pkg.set_sky_texture_size(skyTex.width, skyTex.height);
+
+    const ceilingMemory = createWasmBuffer(ceilingTexPtr, ceilingTex.width, ceilingTex.height, 'ceiling');
+    const ceilingSrc = new Uint8Array(
+      ceilingTex.data.buffer,
+      ceilingTex.data.byteOffset || 0,
+      ceilingTex.data.byteLength || ceilingTex.data.length
+    );
+    ceilingMemory.set(ceilingSrc.subarray(0, Math.min(ceilingSrc.length, ceilingMemory.length)));
+    pkg.set_ceiling_texture_size(ceilingTex.width, ceilingTex.height);
 
     fbPtr = pkg.get_framebuffer_ptr();
     ensureViews(w, h);
