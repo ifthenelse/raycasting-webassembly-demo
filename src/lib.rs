@@ -21,6 +21,7 @@ const FB_SIZE: usize = WIDTH * HEIGHT * 4;
 static mut MAP_W: usize = 8;
 static mut MAP_H: usize = 8;
 static mut WORLD_MAP_VEC: Option<Vec<i32>> = None;
+static mut CEILING_MAP_VEC: Option<Vec<i32>> = None;
 
 #[wasm_bindgen]
 extern "C" {
@@ -37,6 +38,7 @@ fn lcg_next(seed: &mut u32) -> u32 {
 fn generate_map(w: usize, h: usize, mut seed: u32) {
     if w == 0 || h == 0 { return; }
     let mut v = vec![0i32; w * h];
+    let mut ceiling_v = vec![0i32; w * h];
 
     // outer walls
     for x in 0..w {
@@ -58,10 +60,25 @@ fn generate_map(w: usize, h: usize, mut seed: u32) {
         }
     }
 
+    // Add random ceilings in open areas (creates enclosed rooms)
+    // Only add ceilings in cells that are not walls themselves
+    for y in 2..(h - 2) {
+        for x in 2..(w - 2) {
+            if v[y * w + x] == 0 {
+                let r = (lcg_next(&mut seed) % 100) as u8;
+                // ~12% chance of ceiling in empty cells
+                if r < 12 {
+                    ceiling_v[y * w + x] = 1;
+                }
+            }
+        }
+    }
+
     unsafe {
         MAP_W = w;
         MAP_H = h;
         WORLD_MAP_VEC = Some(v);
+        CEILING_MAP_VEC = Some(ceiling_v);
     }
 }
 
@@ -79,11 +96,15 @@ static mut FLOOR_TEX_H: usize = 64;
 static mut SKY_TEX_BUF: [u8; TEXTURE_MAX_SIZE] = [0; TEXTURE_MAX_SIZE];
 static mut SKY_TEX_W: usize = 0;
 static mut SKY_TEX_H: usize = 0;
+static mut CEILING_TEX_BUF: [u8; TEXTURE_MAX_SIZE] = [0; TEXTURE_MAX_SIZE];
+static mut CEILING_TEX_W: usize = 64;
+static mut CEILING_TEX_H: usize = 64;
 
 // Dynamically allocated texture storages (used when JS requests larger textures)
 static mut WALL_TEX_VEC: Option<Vec<u8>> = None;
 static mut FLOOR_TEX_VEC: Option<Vec<u8>> = None;
 static mut SKY_TEX_VEC: Option<Vec<u8>> = None;
+static mut CEILING_TEX_VEC: Option<Vec<u8>> = None;
 
 // Player state
 static mut POS_X: f32 = 2.5;
@@ -107,6 +128,20 @@ fn map_at(x: i32, y: i32) -> i32 {
             v[(y as usize) * w + (x as usize)]
         } else {
             1
+        }
+    }
+}
+
+fn has_ceiling(x: i32, y: i32) -> bool {
+    unsafe {
+        let w = MAP_W;
+        let h = MAP_H;
+        if x < 0 || y < 0 || x >= w as i32 || y >= h as i32 {
+            false
+        } else if let Some(ref v) = CEILING_MAP_VEC {
+            v[(y as usize) * w + (x as usize)] != 0
+        } else {
+            false
         }
     }
 }
@@ -181,7 +216,9 @@ fn render_scene() {
     let center: f32 = (HEIGHT as f32) * unsafe { CAMERA_HEIGHT_FACTOR } + unsafe { JUMP_OFFSET * jump_px_scale };
 
     // store per-column wall bottom (draw_end) so floor rendering can be clipped to walls
+    // store per-column wall top (draw_start) so ceiling rendering can be clipped to walls
     let mut draw_ends: Vec<i32> = vec![HEIGHT as i32; WIDTH];
+    let mut draw_starts: Vec<i32> = vec![0; WIDTH];
 
     let (pos_x, pos_y, dir_x, dir_y, plane_x, plane_y) = unsafe {
         (POS_X, POS_Y, DIR_X, DIR_Y, PLANE_X, PLANE_Y)
@@ -315,9 +352,10 @@ fn render_scene() {
                 put_pixel(x, y, r, g, b);
             }
         }
-        // record wall bottom for this column to prevent floor overdrawing
+        // record wall top and bottom for this column to prevent floor/ceiling overdrawing
         if x >= 0 && (x as usize) < WIDTH {
             draw_ends[x as usize] = draw_end;
+            draw_starts[x as usize] = draw_start;
         }
     }
 
@@ -359,6 +397,48 @@ fn render_scene() {
                 put_pixel(x, y, r, g, b);
                 floor_x += floor_step_x;
                 floor_y += floor_step_y;
+            }
+        }
+    }
+
+    // Render ceiling with perspective-correct casting
+    // Mirrors floor rendering but for rows above the camera horizon
+    let end_y = (center as i32).max(0);
+    for y in (0..end_y).rev() {
+        let p = center - (y as f32);
+        if p <= 0.0 {
+            continue;
+        }
+        let row_distance = (0.5 * HEIGHT as f32) / p;
+
+        let ceiling_step_x = row_distance * (ray_dir_x1 - ray_dir_x0) / WIDTH as f32;
+        let ceiling_step_y = row_distance * (ray_dir_y1 - ray_dir_y0) / WIDTH as f32;
+
+        let mut ceiling_x = pos_x + row_distance * ray_dir_x0;
+        let mut ceiling_y = pos_y + row_distance * ray_dir_y0;
+
+        let shade = (255.0 / (1.0 + row_distance * 0.15)).min(255.0) / 255.0;
+
+        unsafe {
+            for x in 0..WIDTH as i32 {
+                let cx = ceiling_x - ceiling_x.floor();
+                let cy = ceiling_y - ceiling_y.floor();
+                // Check if current position has a ceiling above it
+                let ceil_x = ceiling_x as i32;
+                let ceil_y = ceiling_y as i32;
+                // Only draw ceiling if:
+                // 1. The current map cell has a ceiling
+                // 2. The current row is not blocked by a wall (above the wall's top)
+                if has_ceiling(ceil_x, ceil_y) && (y as i32) < draw_starts[x as usize] {
+                    let ceiling_slice: &[u8] = if let Some(ref v) = CEILING_TEX_VEC { &v[..] } else { &CEILING_TEX_BUF[..] };
+                    if CEILING_TEX_W > 0 && CEILING_TEX_H > 0 && !ceiling_slice.is_empty() {
+                        let (r, g, b) = sample_bilinear(ceiling_slice, CEILING_TEX_W, CEILING_TEX_H, cx, cy);
+                        let (r, g, b) = apply_shade(r, g, b, shade);
+                        put_pixel(x, y, r, g, b);
+                    }
+                }
+                ceiling_x += ceiling_step_x;
+                ceiling_y += ceiling_step_y;
             }
         }
     }
