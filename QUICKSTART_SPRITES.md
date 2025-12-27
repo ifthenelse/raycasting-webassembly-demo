@@ -75,6 +75,106 @@ Save your atlas (one row per sprite) as:
 assets/lamp-wall.png
 ```
 
+## For AI Generation Tools (CRITICAL)
+
+If you use AI image generators to create sprites, use this **exact prompt template** to minimize angle/rotation errors:
+
+```
+Create an 8-frame sprite atlas (512×64 px) of a [OBJECT] mounted on a wall.
+Each frame is 64×64 px showing the object from a different angle in the EXACT order below.
+Use a transparent background (PNG with alpha channel).
+
+CRITICAL REQUIREMENTS - FOLLOW EXACTLY:
+- All 8 frames MUST appear in a single horizontal row, in this EXACT LEFT-TO-RIGHT order:
+
+  Position 1 (Frame 0): Object facing camera directly (0° rotation)
+    - All front-facing surfaces fully visible
+    - Mounting bracket centered, facing user
+    - Brightest/most detailed view
+
+  Position 2 (Frame 1): Object rotated 45° CLOCKWISE from front
+    - Right-front surfaces visible, left surfaces hidden
+    - Mounting bracket visible on left edge (receding away)
+    - Transitional view
+
+  Position 3 (Frame 2): Object rotated 90° CLOCKWISE (pure SIDE view from RIGHT)
+    - Only right profile visible
+    - Pure side profile perpendicular to camera
+    - Mounting bracket on left edge
+    - MUST be perfect HORIZONTAL MIRROR of Position 7
+
+  Position 4 (Frame 3): Object rotated 135° CLOCKWISE from front
+    - Right-back surfaces visible, front mostly hidden
+    - Mounting bracket on left side
+    - MUST be perfect HORIZONTAL MIRROR of Position 6
+
+  Position 5 (Frame 4): Object rotated 180° (BACK view, facing AWAY from camera)
+    - All back surfaces fully visible
+    - CRITICAL: Show mounting hardware ONLY on back side
+    - NEVER show duplicate brackets - if visible on front, it's wrong
+    - Opposite of Position 1
+
+  Position 6 (Frame 5): Object rotated 225° CLOCKWISE from front
+    - Left-back surfaces visible, front mostly hidden
+    - Mounting bracket on right side
+    - MUST be a perfect HORIZONTAL MIRROR of Position 4
+
+  Position 7 (Frame 6): Object rotated 270° CLOCKWISE (pure SIDE view from LEFT)
+    - Only left profile visible
+    - Pure side profile perpendicular to camera (opposite from Position 3)
+    - Mounting bracket on right edge
+    - MUST be perfect HORIZONTAL MIRROR of Position 3
+
+  Position 8 (Frame 7): Object rotated 315° CLOCKWISE from front
+    - Left-front surfaces visible, right surfaces hidden
+    - Mounting bracket on right side (receding away)
+    - MUST be perfect HORIZONTAL MIRROR of Position 2
+
+MIRROR VALIDATION (REQUIRED):
+- Position 2 flipped horizontally = Position 7 (identical after flip)
+- Position 1 flipped horizontally = Position 8 (identical after flip)
+- Position 3 flipped horizontally = Position 6 (identical after flip)
+- If mirrors don't match, one is rotated wrong - REJECT AND REGENERATE
+
+GEOMETRY RULES:
+- All frames show same object from different angles
+- Glass panes/panels always glass, metal always metal - NO SWAPS
+- All mounting hardware faces OUTWARD relative to object
+- No duplicate brackets visible from two directions
+- All frames same canvas size, object centered consistently
+
+NO EXTRA ELEMENTS:
+- Only the [OBJECT] itself - no light bulbs, wires, decorative plates, or separate parts
+```
+
+## Validation Checklist for Any Atlas
+
+Before using an atlas:
+
+1. **Frame count**: Exactly 8 frames in one horizontal row ✓
+2. **Angle verification** (use a protractor or grid overlay):
+   - Frame 0 (left-most): object front-facing ✓
+   - Frame 2 (1/4 way): object 90° rotated (pure side view) ✓
+   - Frame 4 (center): object 180° rotated (back view, upside-down) ✓
+   - Frame 6 (3/4 way): object 270° rotated (opposite side view) ✓
+3. **Hardware path** (brackets/screws):
+   - Frame 0: bracket centered ✓
+   - Frame 2: bracket left edge ✓
+   - Frame 4: bracket back only (never front) ✓
+   - Frame 6: bracket right edge ✓
+4. **Mirror pairs** (flip images horizontally and compare):
+   - Frame 2 ↔ Frame 6: identical after flip ✓
+   - Frame 1 ↔ Frame 7: identical after flip ✓
+   - Frame 3 ↔ Frame 5: identical after flip ✓
+5. **Geometry consistency** (zoom in and verify):
+   - Glass panels always glass, metal always metal ✓
+   - No missing features in any frame ✓
+   - No swapped materials or duplicate hardware ✓
+6. **Canvas**: All frames same size, object centered consistently ✓
+7. **Transparency**: Real PNG alpha channel (not fake black) ✓
+
+If ANY check fails, the atlas will render incorrectly in-game. Fix or regenerate.
+
 ## Build & test
 
 ```bash

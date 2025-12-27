@@ -1,5 +1,39 @@
 # Sprite Atlas Format Guide
 
+## CRITICAL: Exact Angle Diagram
+
+Before creating or validating any sprite atlas, understand the exact rotation angles:
+
+```
+               Frame 0 (0°)
+              FRONT VIEW
+                  ↑
+                  │
+    Frame 7   Frame 1
+    (315°)    (45°)
+       ╲        │        ╱
+        ╲       │       ╱
+         ╲      │      ╱
+          ╲     │     ╱
+           ╲    │    ╱
+Frame 6 ────────●──────── Frame 2
+(270°)       (90°)
+           ╱    │    ╲
+          ╱     │     ╲
+         ╱      │      ╲
+        ╱       │       ╲
+       ╱        │        ╲
+    Frame 5   Frame 3
+    (225°)    (135°)
+                  ↓
+               Frame 4 (180°)
+              BACK VIEW
+
+Each angle represents a 45° rotation clockwise from the previous.
+Frames at opposite angles (differing by 180°) show opposite views.
+Frames mirrored horizontally should have mirrored angles (±180°, ±90°, etc.).
+```
+
 ## Expected Atlas Layout
 
 Your sprite atlas should be a **horizontal strip** containing all viewing angles:
@@ -14,6 +48,12 @@ Your sprite atlas should be a **horizontal strip** containing all viewing angles
 
 Total size: 512 pixels wide × 64 pixels tall
 ```
+
+**Key angle checkpoints for validation:**
+
+- Frame 0 (0°) and Frame 4 (180°): opposite views (upside-down)
+- Frame 2 (90°) and Frame 6 (270°): opposite side views
+- Frame 2 (90°) rotated 180° ≈ Frame 6 (270°) when flipped
 
 ## Viewing Angles Explained
 
