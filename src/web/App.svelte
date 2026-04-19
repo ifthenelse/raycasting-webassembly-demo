@@ -377,12 +377,14 @@
     ]);
     const skyTex = await loadTexture('../../assets/skybox.png');
     const ceilingTex = await loadTexture('../../assets/ceiling.png');
+    const spriteTex = await loadTexture('../../assets/lamp-wall.png');
 
     // allocate in wasm
     const wallTexPtr = pkg.alloc_wall_texture(wallTex.width, wallTex.height);
     const floorTexPtr = pkg.alloc_floor_texture(floorTex.width, floorTex.height);
     const skyTexPtr = pkg.alloc_sky_texture(skyTex.width, skyTex.height);
     const ceilingTexPtr = pkg.alloc_ceiling_texture(ceilingTex.width, ceilingTex.height);
+    const spriteTexPtr = pkg.alloc_sprite_texture(spriteTex.width, spriteTex.height);
 
     const wallMemory = createWasmBuffer(wallTexPtr, wallTex.width, wallTex.height, 'wall');
     const wallSrc = new Uint8Array(
@@ -419,6 +421,15 @@
     );
     ceilingMemory.set(ceilingSrc.subarray(0, Math.min(ceilingSrc.length, ceilingMemory.length)));
     pkg.set_ceiling_texture_size(ceilingTex.width, ceilingTex.height);
+
+    const spriteMemory = createWasmBuffer(spriteTexPtr, spriteTex.width, spriteTex.height, 'sprite');
+    const spriteSrc = new Uint8Array(
+      spriteTex.data.buffer,
+      spriteTex.data.byteOffset || 0,
+      spriteTex.data.byteLength || spriteTex.data.length
+    );
+    spriteMemory.set(spriteSrc.subarray(0, Math.min(spriteSrc.length, spriteMemory.length)));
+    pkg.set_sprite_texture_size(spriteTex.width, spriteTex.height);
 
     fbPtr = pkg.get_framebuffer_ptr();
     ensureViews(w, h);

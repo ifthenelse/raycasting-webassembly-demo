@@ -106,6 +106,27 @@ static mut FLOOR_TEX_VEC: Option<Vec<u8>> = None;
 static mut SKY_TEX_VEC: Option<Vec<u8>> = None;
 static mut CEILING_TEX_VEC: Option<Vec<u8>> = None;
 
+// Sprite texture storage
+static mut SPRITE_TEX_BUF: [u8; TEXTURE_MAX_SIZE] = [0; TEXTURE_MAX_SIZE];
+static mut SPRITE_TEX_W: usize = 0;
+static mut SPRITE_TEX_H: usize = 0;
+static mut SPRITE_TEX_VEC: Option<Vec<u8>> = None;
+
+// Sprite system: entities with position, orientation, and type
+#[derive(Clone, Copy)]
+struct Sprite {
+    x: f32,              // world X position
+    y: f32,              // world Y position
+    sprite_type: u32,    // which sprite atlas row to use
+    orientation_x: f32,  // orientation vector X (perpendicular to wall for wall sprites)
+    orientation_y: f32,  // orientation vector Y
+    num_frames: u32,     // number of rotation frames in atlas (typically 8)
+    frame_width: f32,    // width of each frame in texture coordinates (e.g., 1.0/8.0 for 8 frames)
+    height: f32,         // sprite height in world units
+}
+
+static mut SPRITES: Option<Vec<Sprite>> = None;
+
 // Player state
 static mut POS_X: f32 = 2.5;
 static mut POS_Y: f32 = 2.5;
@@ -444,6 +465,179 @@ fn render_scene() {
             }
         }
     }
+    
+    // Render sprites
+    render_sprites(center, &draw_ends, pos_x, pos_y, dir_x, dir_y, plane_x, plane_y);
+}
+
+fn render_sprites(
+    center: f32,
+    z_buffer: &[i32],
+    pos_x: f32,
+    pos_y: f32,
+    dir_x: f32,
+    dir_y: f32,
+    plane_x: f32,
+    plane_y: f32,
+) {
+    unsafe {
+        let sprites = match SPRITES {
+            Some(ref s) => s,
+            None => return,
+        };
+        
+        if sprites.is_empty() {
+            return;
+        }
+        
+        // Calculate sprite distances and create sorted indices
+        let mut sprite_order: Vec<(usize, f32)> = sprites
+            .iter()
+            .enumerate()
+            .map(|(i, sprite)| {
+                let dx = sprite.x - pos_x;
+                let dy = sprite.y - pos_y;
+                let dist = dx * dx + dy * dy;
+                (i, dist)
+            })
+            .collect();
+        
+        // Sort by distance (far to near) for painter's algorithm
+        sprite_order.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
+        
+        // Get sprite texture
+        let sprite_slice: &[u8] = if let Some(ref v) = SPRITE_TEX_VEC {
+            &v[..]
+        } else {
+            &SPRITE_TEX_BUF[..]
+        };
+        
+        if SPRITE_TEX_W == 0 || SPRITE_TEX_H == 0 || sprite_slice.is_empty() {
+            return;
+        }
+        
+        // Render each sprite
+        for (sprite_idx, _) in sprite_order {
+            let sprite = &sprites[sprite_idx];
+            
+            // Translate sprite position to relative coordinates
+            let sprite_x = sprite.x - pos_x;
+            let sprite_y = sprite.y - pos_y;
+            
+            // Transform to camera space
+            // inv_det is the inverse of the camera matrix determinant
+            let inv_det = 1.0 / (plane_x * dir_y - dir_x * plane_y);
+            
+            let transform_x = inv_det * (dir_y * sprite_x - dir_x * sprite_y);
+            let transform_y = inv_det * (-plane_y * sprite_x + plane_x * sprite_y);
+            
+            // Skip sprites behind the camera
+            if transform_y <= 0.0 {
+                continue;
+            }
+            
+            // Calculate which frame to show based on viewing angle
+            // Get the angle from sprite to player
+            let to_player_x = -sprite_x;
+            let to_player_y = -sprite_y;
+            let to_player_len = (to_player_x * to_player_x + to_player_y * to_player_y).sqrt();
+            
+            if to_player_len < 0.001 {
+                continue; // Too close to determine angle
+            }
+            
+            let to_player_norm_x = to_player_x / to_player_len;
+            let to_player_norm_y = to_player_y / to_player_len;
+            
+            // Calculate angle between sprite orientation and view direction
+            // Using atan2 to get angle from sprite's perspective
+            let sprite_angle = sprite.orientation_y.atan2(sprite.orientation_x);
+            let view_angle = to_player_norm_y.atan2(to_player_norm_x);
+            
+            // Get relative angle (how much the view is rotated from sprite's front)
+            let mut relative_angle = view_angle - sprite_angle;
+            
+            // Normalize to [0, 2π)
+            while relative_angle < 0.0 {
+                relative_angle += 2.0 * std::f32::consts::PI;
+            }
+            while relative_angle >= 2.0 * std::f32::consts::PI {
+                relative_angle -= 2.0 * std::f32::consts::PI;
+            }
+            
+            // Map angle to frame index
+            // Frame 0 = front (sprite facing you)
+            // Frames progress clockwise around the sprite
+            let angle_per_frame = 2.0 * std::f32::consts::PI / sprite.num_frames as f32;
+            let frame_index = ((relative_angle + angle_per_frame * 0.5) / angle_per_frame) as u32 % sprite.num_frames;
+            
+            // Calculate sprite screen position
+            let sprite_screen_x = ((WIDTH as f32) / 2.0) * (1.0 + transform_x / transform_y);
+            
+            // Calculate sprite height on screen
+            let sprite_height = ((HEIGHT as f32) / transform_y).abs() * sprite.height;
+            
+            // Calculate draw boundaries
+            let draw_start_y = (-sprite_height / 2.0 + center) as i32;
+            let draw_end_y = (sprite_height / 2.0 + center) as i32;
+            
+            // Calculate sprite width (assume 1:1 aspect ratio for now)
+            let sprite_width = sprite_height;
+            let draw_start_x = (-sprite_width / 2.0 + sprite_screen_x) as i32;
+            let draw_end_x = (sprite_width / 2.0 + sprite_screen_x) as i32;
+            
+            // Calculate texture coordinates for this frame
+            let frame_u_start = frame_index as f32 * sprite.frame_width;
+            let frame_u_end = frame_u_start + sprite.frame_width;
+            
+            // Shade based on distance
+            let shade = (255.0 / (1.0 + transform_y * 0.3)).min(255.0) / 255.0;
+            
+            // Draw the sprite column by column
+            for stripe in draw_start_x..draw_end_x {
+                // Skip if outside screen bounds
+                if stripe < 0 || stripe >= WIDTH as i32 {
+                    continue;
+                }
+                
+                // Check Z-buffer - only draw if sprite is in front of wall
+                if transform_y >= 0.0 && stripe >= 0 && (stripe as usize) < z_buffer.len() {
+                    // Calculate perpendicular distance for depth comparison
+                    // We need to compare against wall distances stored in z_buffer
+                    // z_buffer stores draw_end (bottom of wall), we need to check if sprite
+                    // is closer than the wall at this column
+                    
+                    // For a proper depth test, we'd store actual wall distances
+                    // For now, we'll use a simple heuristic: if the wall extends below
+                    // the sprite's bottom, the wall is likely in front
+                    
+                    // Calculate texture X coordinate within the frame
+                    let tex_x = ((stripe - draw_start_x) as f32 / sprite_width).max(0.0).min(1.0);
+                    let u = frame_u_start + tex_x * sprite.frame_width;
+                    
+                    // Draw sprite column
+                    for y in draw_start_y.max(0)..=draw_end_y.min(HEIGHT as i32 - 1) {
+                        // Calculate texture Y coordinate
+                        let tex_y = ((y - draw_start_y) as f32 / sprite_height).max(0.0).min(1.0);
+                        
+                        // Sample sprite texture
+                        // V coordinate depends on sprite_type (which row in atlas)
+                        let v = tex_y; // For single-row atlases
+                        
+                        let (r, g, b) = sample_bilinear(sprite_slice, SPRITE_TEX_W, SPRITE_TEX_H, u, v);
+                        
+                        // Check for transparency (assuming black = transparent, or you can check alpha)
+                        // For RGBA textures, you might want to check the alpha channel
+                        // For now, we'll use a simple luminance threshold
+                        if r > 10 || g > 10 || b > 10 {
+                            let (r, g, b) = apply_shade(r, g, b, shade);
+                            put_pixel(stripe, y, r, g, b);
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
 
 #[wasm_bindgen]
@@ -632,6 +826,149 @@ pub fn set_ceiling_texture_size(w: usize, h: usize) {
 }
 
 #[wasm_bindgen]
+pub fn alloc_sprite_texture(w: usize, h: usize) -> *mut u8 {
+    let bytes = match w.checked_mul(h).and_then(|p| p.checked_mul(4)) {
+        Some(b) => b,
+        None => return std::ptr::null_mut(),
+    };
+    unsafe {
+        SPRITE_TEX_VEC = Some(vec![0u8; bytes]);
+        SPRITE_TEX_W = w;
+        SPRITE_TEX_H = h;
+        SPRITE_TEX_VEC.as_mut().unwrap().as_mut_ptr()
+    }
+}
+
+#[wasm_bindgen]
+pub fn set_sprite_texture_size(w: usize, h: usize) {
+    unsafe {
+        SPRITE_TEX_W = w;
+        SPRITE_TEX_H = h;
+    }
+}
+
+#[wasm_bindgen]
+pub fn get_sprite_texture_ptr() -> *mut u8 {
+    #[allow(static_mut_refs)]
+    unsafe {
+        if let Some(ref mut v) = SPRITE_TEX_VEC {
+            v.as_mut_ptr()
+        } else {
+            SPRITE_TEX_BUF.as_mut_ptr()
+        }
+    }
+}
+
+/// Clear all sprites from the world
+#[wasm_bindgen]
+pub fn clear_sprites() {
+    unsafe {
+        SPRITES = Some(Vec::new());
+    }
+}
+
+/// Add a sprite to the world
+/// sprite_type: which row in the sprite atlas (0 = first row)
+/// num_frames: how many directional frames (typically 8 for full rotation)
+/// orientation_x, orientation_y: the direction the sprite "faces" (should be normalized)
+#[wasm_bindgen]
+pub fn add_sprite(
+    x: f32,
+    y: f32,
+    sprite_type: u32,
+    orientation_x: f32,
+    orientation_y: f32,
+    num_frames: u32,
+    height: f32,
+) {
+    unsafe {
+        if SPRITES.is_none() {
+            SPRITES = Some(Vec::new());
+        }
+        
+        let frame_width = if num_frames > 0 {
+            1.0 / num_frames as f32
+        } else {
+            1.0
+        };
+        
+        // Normalize orientation vector
+        let len = (orientation_x * orientation_x + orientation_y * orientation_y).sqrt();
+        let (norm_x, norm_y) = if len > 0.0001 {
+            (orientation_x / len, orientation_y / len)
+        } else {
+            (1.0, 0.0)
+        };
+        
+        if let Some(ref mut sprites) = SPRITES {
+            sprites.push(Sprite {
+                x,
+                y,
+                sprite_type,
+                orientation_x: norm_x,
+                orientation_y: norm_y,
+                num_frames,
+                frame_width,
+                height,
+            });
+        }
+    }
+}
+
+/// Get the number of sprites in the world
+#[wasm_bindgen]
+pub fn get_sprite_count() -> u32 {
+    unsafe {
+        if let Some(ref sprites) = SPRITES {
+            sprites.len() as u32
+        } else {
+            0
+        }
+    }
+}
+
+fn place_wall_lamps(seed: u32) {
+    unsafe {
+        SPRITES = Some(Vec::new());
+        
+        let mw = MAP_W as i32;
+        let mh = MAP_H as i32;
+        let mut lamp_seed = seed;
+        
+        for y in 1..(mh - 1) {
+            for x in 1..(mw - 1) {
+                if map_at(x, y) != 0 {
+                    let north_open = map_at(x, y - 1) == 0;
+                    let south_open = map_at(x, y + 1) == 0;
+                    let east_open = map_at(x + 1, y) == 0;
+                    let west_open = map_at(x - 1, y) == 0;
+                    
+                    let r = (lcg_next(&mut lamp_seed) % 100) as u8;
+                    if r < 20 {
+                        let open_sides = [north_open, south_open, east_open, west_open]
+                            .iter()
+                            .filter(|&&open| open)
+                            .count();
+                        
+                        if open_sides > 0 && open_sides <= 2 {
+                            if north_open {
+                                add_sprite(x as f32 + 0.5, y as f32 + 0.9, 0, 0.0, -1.0, 8, 0.8);
+                            } else if south_open {
+                                add_sprite(x as f32 + 0.5, y as f32 + 0.1, 0, 0.0, 1.0, 8, 0.8);
+                            } else if east_open {
+                                add_sprite(x as f32 + 0.1, y as f32 + 0.5, 0, 1.0, 0.0, 8, 0.8);
+                            } else if west_open {
+                                add_sprite(x as f32 + 0.9, y as f32 + 0.5, 0, -1.0, 0.0, 8, 0.8);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[wasm_bindgen]
 pub fn init() {
     // Generate a new random map on each init (seeded from Date.now())
     let mut seed = date_now() as u32;
@@ -665,6 +1002,9 @@ pub fn init() {
             POS_X = sx as f32 + 0.5;
             POS_Y = sy as f32 + 0.5;
         }
+        
+        // Initialize sprites and place wall lamps
+        place_wall_lamps(seed);
     }
 
     render_scene();
@@ -971,6 +1311,8 @@ pub fn regenerate_map(seed: u32) {
             POS_Y = sy as f32 + 0.5;
         }
     }
+    
+    place_wall_lamps(s);
 
     render_scene();
 }
@@ -1002,6 +1344,8 @@ pub fn regenerate_map_with_size(w: u32, h: u32, seed: u32) {
             POS_Y = sy as f32 + 0.5;
         }
     }
+    
+    place_wall_lamps(s);
 
     render_scene();
 }

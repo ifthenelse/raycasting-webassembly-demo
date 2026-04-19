@@ -1,0 +1,7 @@
+single front view only, duplicate same view, mirrored symmetry only,
+cropped, zoomed in, cut off head, cut off feet,
+different character, redesign, different armor, different skull, different colors,
+extra limbs, extra hands, missing limbs, deformed anatomy,
+text, letters, numbers, watermark, logo,
+background scene, room, wall texture, floor texture, dramatic shadows, cast shadow,
+blur, smear, low detail, noise, jpeg artifacts

@@ -1,0 +1,29 @@
+positive prompt:
+
+Create turnaround sheet of this exact character with 5 full-body views in one single image:
+front view, 3/4 front right, right side profile, 3/4 back right, back view.
+
+Requirements:
+- identical character design as the reference image (same armor, skull face, glowing eyes, proportions, colors)
+- neutral standing pose in every view (arms relaxed, same stance)
+- consistent lighting and shading across all views
+- all views aligned to the same ground line, same scale, centered composition
+- evenly spaced views with clear separation
+- plain flat background (single color), no scenery, no props
+- doom / 1990s FPS sprite vibe, crisp pixel-art readability
+
+---
+
+negative prompt:
+
+single front view only, duplicate same view, mirrored symmetry only,
+cropped, zoomed in, cut off head, cut off feet,
+different character, redesign, different armor, different skull, different colors,
+extra limbs, extra hands, missing limbs, deformed anatomy,
+text, letters, numbers, watermark, logo,
+background scene, room, wall texture, floor texture, dramatic shadows, cast shadow,
+blur, smear, low detail, noise, jpeg artifacts
+
+---
+
+{"batchSize":1,"height":1024,"maskBlur":2.5,"seed":2963577029,"preserveOriginalAfterInpaint":true,"teaCache":false,"tiledDecoding":false,"refinerModel":"","maskBlurOutset":0,"sampler":10,"clipSkip":2,"hiresFix":false,"seedMode":2,"separateClipL":false,"width":1024,"loras":[],"faceRestoration":"","steps":28,"causalInferencePad":0,"cfgZeroInitSteps":0,"upscaler":"","resolutionDependentShift":true,"model":"flux_1_kontext_dev_q8p.ckpt","guidanceScale":4.5,"strength":1,"controls":[],"zeroNegativePrompt":false,"batchCount":1,"cfgZeroStar":false,"sharpness":0,"shift":1,"speedUpWithGuidanceEmbed":true,"tiledDiffusion":false}

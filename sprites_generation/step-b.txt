@@ -1,0 +1,28 @@
+positive prompt:
+
+Create a single full-body turnaround image of this exact character,
+showing ONE view only.
+
+View:
+- back view (rotated 180 degrees clockwise around the vertical axis)
+
+Requirements:
+- identical character design as the reference image (same armor, skull face, glowing eyes, proportions, colors)
+- neutral standing pose (arms relaxed)
+- consistent lighting and shading
+- character fully visible head to feet, centered
+- plain flat background (single color), no scenery, no props
+- doom / 1990s FPS sprite vibe, crisp pixel-art readability
+
+---
+
+negative prompt:
+
+turnaround sheet, multiple views, multi-view layout, character lineup, shadow, blur,
+front, side, left, right, 3/4, 3/4 front-left, 3/4 front-right, 3/4 back-left, 3/4 back-right, rotation sequence, sprite sheet
+
+---
+
+configuration (step-b-no-lora-3):
+
+{"batchSize":1,"height":1024,"maskBlur":2.5,"seed":2963577029,"preserveOriginalAfterInpaint":true,"teaCache":false,"tiledDecoding":false,"refinerModel":"","maskBlurOutset":0,"sampler":10,"clipSkip":2,"hiresFix":false,"seedMode":2,"separateClipL":false,"width":1024,"loras":[],"faceRestoration":"","steps":28,"causalInferencePad":0,"cfgZeroInitSteps":0,"upscaler":"","resolutionDependentShift":true,"model":"flux_1_kontext_dev_q8p.ckpt","guidanceScale":4.5,"strength":1,"controls":[],"zeroNegativePrompt":false,"batchCount":1,"cfgZeroStar":false,"sharpness":0,"shift":1,"speedUpWithGuidanceEmbed":true,"tiledDiffusion":false}
