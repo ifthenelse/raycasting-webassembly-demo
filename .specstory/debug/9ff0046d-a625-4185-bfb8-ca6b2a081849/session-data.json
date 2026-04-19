@@ -1,0 +1,14 @@
+{
+  "schemaVersion": "1.0",
+  "provider": {
+    "id": "copilotide",
+    "name": "copilotide",
+    "version": "1.0"
+  },
+  "sessionId": "9ff0046d-a625-4185-bfb8-ca6b2a081849",
+  "createdAt": "2026-04-19T16:34:39+02:00",
+  "updatedAt": "1970-01-01T01:00:00+01:00",
+  "slug": "untitled",
+  "workspaceRoot": "/Users/andreacollet/Projects/raycasting-webassembly-demo",
+  "exchanges": null
+}
