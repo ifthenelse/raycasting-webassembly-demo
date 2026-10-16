@@ -17,11 +17,17 @@
     "format": "prettier --write \"**/*.{js,svelte,json,css,html,md}\""
   },
   "devDependencies": {
-    "@sveltejs/vite-plugin-svelte": "^6.2.1",
-    "prettier": "^3.7.4",
-    "prettier-plugin-svelte": "^3.4.1",
-    "puppeteer": "^24.34.0",
-    "svelte": "^5.46.1",
-    "vite": "^7.3.0"
+    "@commitlint/cli": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.3",
+    "@sveltejs/vite-plugin-svelte": "^7.3.1",
+    "prettier": "^3.9.10",
+    "prettier-plugin-svelte": "^4.1.1",
+    "puppeteer": "^25.14.0",
+    "svelte": "^5.57.2",
+    "vite": "^8.3.4"
+  },
+  "allowScripts": {
+    "puppeteer@25.14.0": true,
+    "fsevents@2.3.3": true
   }
 }

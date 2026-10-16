@@ -13,6 +13,7 @@
       "**/target": true,
       "**/dist": true,
     },
+    "specstory.cloudSync.enabled": "never",
   },
   "extensions": {
     "recommendations": ["esbenp.prettier-vscode", "svelte.svelte-vscode"],

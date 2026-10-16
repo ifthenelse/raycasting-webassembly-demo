@@ -1,3 +1,5 @@
+// ponytail: single-threaded wasm, so static mut is sound; migrate to thread_local!/Cell if threads are added
+#![allow(static_mut_refs)]
 use wasm_bindgen::prelude::*;
 
 // Raycaster core (CPU) compiled to WebAssembly and exposed to JS via `wasm-bindgen`.
@@ -117,6 +119,7 @@ static mut SPRITE_TEX_VEC: Option<Vec<u8>> = None;
 struct Sprite {
     x: f32,              // world X position
     y: f32,              // world Y position
+    #[allow(dead_code)]
     sprite_type: u32,    // which sprite atlas row to use
     orientation_x: f32,  // orientation vector X (perpendicular to wall for wall sprites)
     orientation_y: f32,  // orientation vector Y
@@ -588,7 +591,6 @@ fn render_sprites(
             
             // Calculate texture coordinates for this frame
             let frame_u_start = frame_index as f32 * sprite.frame_width;
-            let frame_u_end = frame_u_start + sprite.frame_width;
             
             // Shade based on distance
             let shade = (255.0 / (1.0 + transform_y * 0.3)).min(255.0) / 255.0;
@@ -1020,10 +1022,10 @@ pub fn step(forward: f32, turn: f32, strafe: f32, jump: f32, dt: f32) {
         // A point (px, py) collides with wall at (wx, wy) if:
         //   |px - closest_x| + |py - closest_y| < radius
         
-        let min_grid_x = ((x - radius).floor() as i32);
-        let max_grid_x = ((x + radius).ceil() as i32);
-        let min_grid_y = ((y - radius).floor() as i32);
-        let max_grid_y = ((y + radius).ceil() as i32);
+        let min_grid_x = (x - radius).floor() as i32;
+        let max_grid_x = (x + radius).ceil() as i32;
+        let min_grid_y = (y - radius).floor() as i32;
+        let max_grid_y = (y + radius).ceil() as i32;
         
         for grid_y in min_grid_y..=max_grid_y {
             for grid_x in min_grid_x..=max_grid_x {
@@ -1053,10 +1055,10 @@ pub fn step(forward: f32, turn: f32, strafe: f32, jump: f32, dt: f32) {
     // For Manhattan offset: diagonal edges have normals like (±1/√2, ±1/√2)
     // For straight walls: normals are (±1, 0) or (0, ±1)
     fn detect_collision_normal(x: f32, y: f32, radius: f32) -> Option<(f32, f32)> {
-        let min_grid_x = ((x - radius).floor() as i32);
-        let max_grid_x = ((x + radius).ceil() as i32);
-        let min_grid_y = ((y - radius).floor() as i32);
-        let max_grid_y = ((y + radius).ceil() as i32);
+        let min_grid_x = (x - radius).floor() as i32;
+        let max_grid_x = (x + radius).ceil() as i32;
+        let min_grid_y = (y - radius).floor() as i32;
+        let max_grid_y = (y + radius).ceil() as i32;
         
         let mut closest_dist = f32::INFINITY;
         let mut best_normal: Option<(f32, f32)> = None;
