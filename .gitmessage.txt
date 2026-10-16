@@ -1,0 +1,15 @@
+# <type>(<optional-scope>)!: <description>
+#
+# Allowed types:
+# build, chore, ci, docs, feat, fix, perf, refactor, revert, style, test
+#
+# Examples:
+# feat(registration): add thank-you QR code
+# fix(i18n): fallback to English labels
+# refactor(form)!: simplify submission payload mapping
+#
+# Optional body:
+# Explain why the change was made and any relevant context.
+#
+# Optional footer:
+# BREAKING CHANGE: describe the breaking change

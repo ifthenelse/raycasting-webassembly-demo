@@ -1,0 +1,11 @@
+# Update cadence and ownership: weekly, reviewed like any other change (see CONTRIBUTING.md).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly

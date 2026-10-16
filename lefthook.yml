@@ -1,0 +1,15 @@
+# Local hooks give fast feedback; CI is the authoritative gate (hooks can be skipped).
+# Install: lefthook install
+pre-commit:
+  parallel: true
+  commands:
+    format:
+      glob: "*.{js,mjs,cjs,ts,tsx,json,md,yml,yaml,css}"
+      run: npx --no-install prettier --check {staged_files}
+pre-push:
+  commands:
+    verify:
+      run: bash scripts/verify
+# Optional: secret scanning and commit-message linting
+#  gitleaks: { run: gitleaks git --staged }   # pre-commit
+#  commitlint: { run: npx --no-install commitlint --edit {1} }   # commit-msg

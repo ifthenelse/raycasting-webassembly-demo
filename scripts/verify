@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# One fast verification command for developers, coding agents, git hooks and CI.
+# Runs only the checks this repository defines; stops at the first failure.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+ran=0
+run() { printf '\n▶ %s\n' "$*"; "$@"; ran=1; }
+
+if [ -f package.json ]; then
+  for s in typecheck lint format:check test; do
+    if node -e "process.exit(require('./package.json').scripts?.['$s'] ? 0 : 1)" 2>/dev/null; then
+      run npm run --silent "$s"
+    fi
+  done
+fi
+
+if [ -f Cargo.toml ]; then
+  run cargo fmt --check
+  run cargo clippy --all-targets -- -D warnings
+  run cargo test
+fi
+
+if [ -f pyproject.toml ] && command -v uv >/dev/null 2>&1; then
+  grep -q '^\[tool\.ruff' pyproject.toml && { run uv run --locked ruff check .; run uv run --locked ruff format --check .; }
+  grep -q '^\[tool\.pyright' pyproject.toml && run uv run --locked pyright
+  grep -q 'pytest' pyproject.toml && run uv run --locked pytest -q
+fi
+
+if [ -f project.yml ]; then
+  app="$(sed -n 's/^name: *//p' project.yml | head -n1)"
+  run xcodebuild -project "$app.xcodeproj" -scheme "$app" -destination 'platform=macOS,arch=arm64' build
+fi
+
+if [ "$ran" = 0 ]; then
+  echo "verify: no checks are defined for this repository yet" >&2
+fi

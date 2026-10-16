@@ -1,0 +1,5 @@
+# Maps sensitive paths to accountable reviewers. Pair with branch protection: this file alone enforces nothing.
+# TODO: replace the placeholders with real handles/teams and uncomment.
+# *                @your-handle
+# /.github/        @your-handle
+# /docs/security/  @your-handle
