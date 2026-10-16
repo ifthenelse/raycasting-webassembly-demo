@@ -38,7 +38,9 @@ fn lcg_next(seed: &mut u32) -> u32 {
 }
 
 fn generate_map(w: usize, h: usize, mut seed: u32) {
-    if w == 0 || h == 0 { return; }
+    if w == 0 || h == 0 {
+        return;
+    }
     let mut v = vec![0i32; w * h];
     let mut ceiling_v = vec![0i32; w * h];
 
@@ -56,7 +58,8 @@ fn generate_map(w: usize, h: usize, mut seed: u32) {
     for y in 1..(h - 1) {
         for x in 1..(w - 1) {
             let r = (lcg_next(&mut seed) % 100) as u8;
-            if r < 18 { // ~18% walls
+            if r < 18 {
+                // ~18% walls
                 v[y * w + x] = 1;
             }
         }
@@ -117,15 +120,15 @@ static mut SPRITE_TEX_VEC: Option<Vec<u8>> = None;
 // Sprite system: entities with position, orientation, and type
 #[derive(Clone, Copy)]
 struct Sprite {
-    x: f32,              // world X position
-    y: f32,              // world Y position
+    x: f32, // world X position
+    y: f32, // world Y position
     #[allow(dead_code)]
-    sprite_type: u32,    // which sprite atlas row to use
-    orientation_x: f32,  // orientation vector X (perpendicular to wall for wall sprites)
-    orientation_y: f32,  // orientation vector Y
-    num_frames: u32,     // number of rotation frames in atlas (typically 8)
-    frame_width: f32,    // width of each frame in texture coordinates (e.g., 1.0/8.0 for 8 frames)
-    height: f32,         // sprite height in world units
+    sprite_type: u32, // which sprite atlas row to use
+    orientation_x: f32, // orientation vector X (perpendicular to wall for wall sprites)
+    orientation_y: f32, // orientation vector Y
+    num_frames: u32, // number of rotation frames in atlas (typically 8)
+    frame_width: f32, // width of each frame in texture coordinates (e.g., 1.0/8.0 for 8 frames)
+    height: f32, // sprite height in world units
 }
 
 static mut SPRITES: Option<Vec<Sprite>> = None;
@@ -193,8 +196,8 @@ fn sample_bilinear(tex: &[u8], tex_w: usize, tex_h: usize, u: f32, v: f32) -> (u
     let fy = v * (tex_h as f32 - 1.0).max(0.0);
     let x0 = (fx.floor() as usize).min(tex_w.saturating_sub(1));
     let y0 = (fy.floor() as usize).min(tex_h.saturating_sub(1));
-    let dx = (fx - fx.floor()).max(0.0).min(1.0);
-    let dy = (fy - fy.floor()).max(0.0).min(1.0);
+    let dx = (fx - fx.floor()).clamp(0.0, 1.0);
+    let dy = (fy - fy.floor()).clamp(0.0, 1.0);
     let x1 = (x0 + 1).min(tex_w.saturating_sub(1));
     let y1 = (y0 + 1).min(tex_h.saturating_sub(1));
 
@@ -221,16 +224,33 @@ fn sample_bilinear(tex: &[u8], tex_w: usize, tex_h: usize, u: f32, v: f32) -> (u
     let s11g = tex[i11 + 1] as f32;
     let s11b = tex[i11 + 2] as f32;
 
-    let r = s00r * (1.0 - dx) * (1.0 - dy) + s10r * dx * (1.0 - dy) + s01r * (1.0 - dx) * dy + s11r * dx * dy;
-    let g = s00g * (1.0 - dx) * (1.0 - dy) + s10g * dx * (1.0 - dy) + s01g * (1.0 - dx) * dy + s11g * dx * dy;
-    let b = s00b * (1.0 - dx) * (1.0 - dy) + s10b * dx * (1.0 - dy) + s01b * (1.0 - dx) * dy + s11b * dx * dy;
+    let r = s00r * (1.0 - dx) * (1.0 - dy)
+        + s10r * dx * (1.0 - dy)
+        + s01r * (1.0 - dx) * dy
+        + s11r * dx * dy;
+    let g = s00g * (1.0 - dx) * (1.0 - dy)
+        + s10g * dx * (1.0 - dy)
+        + s01g * (1.0 - dx) * dy
+        + s11g * dx * dy;
+    let b = s00b * (1.0 - dx) * (1.0 - dy)
+        + s10b * dx * (1.0 - dy)
+        + s01b * (1.0 - dx) * dy
+        + s11b * dx * dy;
 
-    ((r.min(255.0) as u8), (g.min(255.0) as u8), (b.min(255.0) as u8))
+    (
+        (r.min(255.0) as u8),
+        (g.min(255.0) as u8),
+        (b.min(255.0) as u8),
+    )
 }
 
 fn apply_shade(r: u8, g: u8, b: u8, shade: f32) -> (u8, u8, u8) {
-    let s = shade.max(0.0).min(1.0);
-    ((((r as f32) * s) as u8), (((g as f32) * s) as u8), (((b as f32) * s) as u8))
+    let s = shade.clamp(0.0, 1.0);
+    (
+        (((r as f32) * s) as u8),
+        (((g as f32) * s) as u8),
+        (((b as f32) * s) as u8),
+    )
 }
 
 fn render_scene() {
@@ -245,9 +265,8 @@ fn render_scene() {
     let mut draw_ends: Vec<i32> = vec![HEIGHT as i32; WIDTH];
     let mut draw_starts: Vec<i32> = vec![0; WIDTH];
 
-    let (pos_x, pos_y, dir_x, dir_y, plane_x, plane_y) = unsafe {
-        (POS_X, POS_Y, DIR_X, DIR_Y, PLANE_X, PLANE_Y)
-    };
+    let (pos_x, pos_y, dir_x, dir_y, plane_x, plane_y) =
+        unsafe { (POS_X, POS_Y, DIR_X, DIR_Y, PLANE_X, PLANE_Y) };
 
     // Fill sky + floor base. For sky pixels we sample the sky texture (if provided)
     // using the ray direction to compute a horizontal wrap (longitude) and the
@@ -264,15 +283,23 @@ fn render_scene() {
                 // convert direction to [0,1] horizontal coordinate
                 let angle = ray_dir_y.atan2(ray_dir_x);
                 let mut u = angle / (2.0 * std::f32::consts::PI) + 0.5;
-                if !u.is_finite() { u = 0.0; }
+                if !u.is_finite() {
+                    u = 0.0;
+                }
                 // vertical mapping: map screen Y to texture V (0..1)
                 // Use base_center (without jump offset) to maintain consistent sky proportions
                 // when jumping. This keeps the sky texture from stretching during jump.
-                let mut v = (y as f32 / base_center).max(0.0).min(1.0);
-                if !v.is_finite() { v = 0.0; }
+                let mut v = (y as f32 / base_center).clamp(0.0, 1.0);
+                if !v.is_finite() {
+                    v = 0.0;
+                }
 
                 unsafe {
-                    let sky_slice: &[u8] = if let Some(ref v) = SKY_TEX_VEC { &v[..] } else { &SKY_TEX_BUF[..] };
+                    let sky_slice: &[u8] = if let Some(ref v) = SKY_TEX_VEC {
+                        &v[..]
+                    } else {
+                        &SKY_TEX_BUF[..]
+                    };
                     if SKY_TEX_W > 0 && SKY_TEX_H > 0 && !sky_slice.is_empty() {
                         let (r, g, b) = sample_bilinear(sky_slice, SKY_TEX_W, SKY_TEX_H, u, v);
                         put_pixel(x, y, r, g, b);
@@ -295,8 +322,16 @@ fn render_scene() {
         let mut map_x = pos_x as i32;
         let mut map_y = pos_y as i32;
 
-        let delta_dist_x = if ray_dir_x == 0.0 { f32::INFINITY } else { (1.0 / ray_dir_x).abs() };
-        let delta_dist_y = if ray_dir_y == 0.0 { f32::INFINITY } else { (1.0 / ray_dir_y).abs() };
+        let delta_dist_x = if ray_dir_x == 0.0 {
+            f32::INFINITY
+        } else {
+            (1.0 / ray_dir_x).abs()
+        };
+        let delta_dist_y = if ray_dir_y == 0.0 {
+            f32::INFINITY
+        } else {
+            (1.0 / ray_dir_y).abs()
+        };
 
         let (step_x, mut side_dist_x) = if ray_dir_x < 0.0 {
             (-1, (pos_x - map_x as f32) * delta_dist_x)
@@ -370,9 +405,13 @@ fn render_scene() {
                 // Map from screen space to texture space accounting for clipping
                 let d = y - center as i32; // distance from horizon to current pixel
                 let tex_y_pos = (d - (-line_height / 2)) as f32 / line_height as f32;
-                let tex_v = tex_y_pos.max(0.0).min(1.0);
-                
-                let wall_slice: &[u8] = if let Some(ref v) = WALL_TEX_VEC { &v[..] } else { &WALL_TEX_BUF[..] };
+                let tex_v = tex_y_pos.clamp(0.0, 1.0);
+
+                let wall_slice: &[u8] = if let Some(ref v) = WALL_TEX_VEC {
+                    &v[..]
+                } else {
+                    &WALL_TEX_BUF[..]
+                };
                 let (r, g, b) = sample_bilinear(wall_slice, WALL_TEX_W, WALL_TEX_H, tex_u, tex_v);
                 let (r, g, b) = apply_shade(r, g, b, shade);
                 put_pixel(x, y, r, g, b);
@@ -412,12 +451,16 @@ fn render_scene() {
                 let fx = floor_x - floor_x.floor();
                 let fy = floor_y - floor_y.floor();
                 // skip floor pixels that are behind a wall drawn for this column
-                if (y as i32) <= draw_ends[x as usize] {
+                if y <= draw_ends[x as usize] {
                     floor_x += floor_step_x;
                     floor_y += floor_step_y;
                     continue;
                 }
-                let floor_slice: &[u8] = if let Some(ref v) = FLOOR_TEX_VEC { &v[..] } else { &FLOOR_TEX_BUF[..] };
+                let floor_slice: &[u8] = if let Some(ref v) = FLOOR_TEX_VEC {
+                    &v[..]
+                } else {
+                    &FLOOR_TEX_BUF[..]
+                };
                 let (r, g, b) = sample_bilinear(floor_slice, FLOOR_TEX_W, FLOOR_TEX_H, fx, fy);
                 let (r, g, b) = apply_shade(r, g, b, shade);
                 put_pixel(x, y, r, g, b);
@@ -455,10 +498,15 @@ fn render_scene() {
                 // Only draw ceiling if:
                 // 1. The current map cell has a ceiling
                 // 2. The current row is not blocked by a wall (above the wall's top)
-                if has_ceiling(ceil_x, ceil_y) && (y as i32) < draw_starts[x as usize] {
-                    let ceiling_slice: &[u8] = if let Some(ref v) = CEILING_TEX_VEC { &v[..] } else { &CEILING_TEX_BUF[..] };
+                if has_ceiling(ceil_x, ceil_y) && y < draw_starts[x as usize] {
+                    let ceiling_slice: &[u8] = if let Some(ref v) = CEILING_TEX_VEC {
+                        &v[..]
+                    } else {
+                        &CEILING_TEX_BUF[..]
+                    };
                     if CEILING_TEX_W > 0 && CEILING_TEX_H > 0 && !ceiling_slice.is_empty() {
-                        let (r, g, b) = sample_bilinear(ceiling_slice, CEILING_TEX_W, CEILING_TEX_H, cx, cy);
+                        let (r, g, b) =
+                            sample_bilinear(ceiling_slice, CEILING_TEX_W, CEILING_TEX_H, cx, cy);
                         let (r, g, b) = apply_shade(r, g, b, shade);
                         put_pixel(x, y, r, g, b);
                     }
@@ -468,11 +516,14 @@ fn render_scene() {
             }
         }
     }
-    
+
     // Render sprites
-    render_sprites(center, &draw_ends, pos_x, pos_y, dir_x, dir_y, plane_x, plane_y);
+    render_sprites(
+        center, &draw_ends, pos_x, pos_y, dir_x, dir_y, plane_x, plane_y,
+    );
 }
 
+#[allow(clippy::too_many_arguments)]
 fn render_sprites(
     center: f32,
     z_buffer: &[i32],
@@ -488,11 +539,11 @@ fn render_sprites(
             Some(ref s) => s,
             None => return,
         };
-        
+
         if sprites.is_empty() {
             return;
         }
-        
+
         // Calculate sprite distances and create sorted indices
         let mut sprite_order: Vec<(usize, f32)> = sprites
             .iter()
@@ -504,62 +555,62 @@ fn render_sprites(
                 (i, dist)
             })
             .collect();
-        
+
         // Sort by distance (far to near) for painter's algorithm
         sprite_order.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap_or(std::cmp::Ordering::Equal));
-        
+
         // Get sprite texture
         let sprite_slice: &[u8] = if let Some(ref v) = SPRITE_TEX_VEC {
             &v[..]
         } else {
             &SPRITE_TEX_BUF[..]
         };
-        
+
         if SPRITE_TEX_W == 0 || SPRITE_TEX_H == 0 || sprite_slice.is_empty() {
             return;
         }
-        
+
         // Render each sprite
         for (sprite_idx, _) in sprite_order {
             let sprite = &sprites[sprite_idx];
-            
+
             // Translate sprite position to relative coordinates
             let sprite_x = sprite.x - pos_x;
             let sprite_y = sprite.y - pos_y;
-            
+
             // Transform to camera space
             // inv_det is the inverse of the camera matrix determinant
             let inv_det = 1.0 / (plane_x * dir_y - dir_x * plane_y);
-            
+
             let transform_x = inv_det * (dir_y * sprite_x - dir_x * sprite_y);
             let transform_y = inv_det * (-plane_y * sprite_x + plane_x * sprite_y);
-            
+
             // Skip sprites behind the camera
             if transform_y <= 0.0 {
                 continue;
             }
-            
+
             // Calculate which frame to show based on viewing angle
             // Get the angle from sprite to player
             let to_player_x = -sprite_x;
             let to_player_y = -sprite_y;
             let to_player_len = (to_player_x * to_player_x + to_player_y * to_player_y).sqrt();
-            
+
             if to_player_len < 0.001 {
                 continue; // Too close to determine angle
             }
-            
+
             let to_player_norm_x = to_player_x / to_player_len;
             let to_player_norm_y = to_player_y / to_player_len;
-            
+
             // Calculate angle between sprite orientation and view direction
             // Using atan2 to get angle from sprite's perspective
             let sprite_angle = sprite.orientation_y.atan2(sprite.orientation_x);
             let view_angle = to_player_norm_y.atan2(to_player_norm_x);
-            
+
             // Get relative angle (how much the view is rotated from sprite's front)
             let mut relative_angle = view_angle - sprite_angle;
-            
+
             // Normalize to [0, 2π)
             while relative_angle < 0.0 {
                 relative_angle += 2.0 * std::f32::consts::PI;
@@ -567,67 +618,69 @@ fn render_sprites(
             while relative_angle >= 2.0 * std::f32::consts::PI {
                 relative_angle -= 2.0 * std::f32::consts::PI;
             }
-            
+
             // Map angle to frame index
             // Frame 0 = front (sprite facing you)
             // Frames progress clockwise around the sprite
             let angle_per_frame = 2.0 * std::f32::consts::PI / sprite.num_frames as f32;
-            let frame_index = ((relative_angle + angle_per_frame * 0.5) / angle_per_frame) as u32 % sprite.num_frames;
-            
+            let frame_index = ((relative_angle + angle_per_frame * 0.5) / angle_per_frame) as u32
+                % sprite.num_frames;
+
             // Calculate sprite screen position
             let sprite_screen_x = ((WIDTH as f32) / 2.0) * (1.0 + transform_x / transform_y);
-            
+
             // Calculate sprite height on screen
             let sprite_height = ((HEIGHT as f32) / transform_y).abs() * sprite.height;
-            
+
             // Calculate draw boundaries
             let draw_start_y = (-sprite_height / 2.0 + center) as i32;
             let draw_end_y = (sprite_height / 2.0 + center) as i32;
-            
+
             // Calculate sprite width (assume 1:1 aspect ratio for now)
             let sprite_width = sprite_height;
             let draw_start_x = (-sprite_width / 2.0 + sprite_screen_x) as i32;
             let draw_end_x = (sprite_width / 2.0 + sprite_screen_x) as i32;
-            
+
             // Calculate texture coordinates for this frame
             let frame_u_start = frame_index as f32 * sprite.frame_width;
-            
+
             // Shade based on distance
             let shade = (255.0 / (1.0 + transform_y * 0.3)).min(255.0) / 255.0;
-            
+
             // Draw the sprite column by column
             for stripe in draw_start_x..draw_end_x {
                 // Skip if outside screen bounds
                 if stripe < 0 || stripe >= WIDTH as i32 {
                     continue;
                 }
-                
+
                 // Check Z-buffer - only draw if sprite is in front of wall
                 if transform_y >= 0.0 && stripe >= 0 && (stripe as usize) < z_buffer.len() {
                     // Calculate perpendicular distance for depth comparison
                     // We need to compare against wall distances stored in z_buffer
                     // z_buffer stores draw_end (bottom of wall), we need to check if sprite
                     // is closer than the wall at this column
-                    
+
                     // For a proper depth test, we'd store actual wall distances
                     // For now, we'll use a simple heuristic: if the wall extends below
                     // the sprite's bottom, the wall is likely in front
-                    
+
                     // Calculate texture X coordinate within the frame
-                    let tex_x = ((stripe - draw_start_x) as f32 / sprite_width).max(0.0).min(1.0);
+                    let tex_x = ((stripe - draw_start_x) as f32 / sprite_width).clamp(0.0, 1.0);
                     let u = frame_u_start + tex_x * sprite.frame_width;
-                    
+
                     // Draw sprite column
                     for y in draw_start_y.max(0)..=draw_end_y.min(HEIGHT as i32 - 1) {
                         // Calculate texture Y coordinate
-                        let tex_y = ((y - draw_start_y) as f32 / sprite_height).max(0.0).min(1.0);
-                        
+                        let tex_y = ((y - draw_start_y) as f32 / sprite_height).clamp(0.0, 1.0);
+
                         // Sample sprite texture
                         // V coordinate depends on sprite_type (which row in atlas)
                         let v = tex_y; // For single-row atlases
-                        
-                        let (r, g, b) = sample_bilinear(sprite_slice, SPRITE_TEX_W, SPRITE_TEX_H, u, v);
-                        
+
+                        let (r, g, b) =
+                            sample_bilinear(sprite_slice, SPRITE_TEX_W, SPRITE_TEX_H, u, v);
+
                         // Check for transparency (assuming black = transparent, or you can check alpha)
                         // For RGBA textures, you might want to check the alpha channel
                         // For now, we'll use a simple luminance threshold
@@ -655,9 +708,13 @@ pub fn get_height() -> u32 {
 #[wasm_bindgen]
 pub fn get_framebuffer_ptr() -> *const u8 {
     #[allow(static_mut_refs)]
-    unsafe { FRAMEBUFFER.as_ptr() }
+    unsafe {
+        FRAMEBUFFER.as_ptr()
+    }
 }
 
+// max/min (not clamp) so a NaN from JS collapses to 0 instead of propagating
+#[allow(clippy::manual_clamp)]
 #[wasm_bindgen]
 pub fn set_camera_height_factor(f: f32) {
     unsafe {
@@ -887,13 +944,13 @@ pub fn add_sprite(
         if SPRITES.is_none() {
             SPRITES = Some(Vec::new());
         }
-        
+
         let frame_width = if num_frames > 0 {
             1.0 / num_frames as f32
         } else {
             1.0
         };
-        
+
         // Normalize orientation vector
         let len = (orientation_x * orientation_x + orientation_y * orientation_y).sqrt();
         let (norm_x, norm_y) = if len > 0.0001 {
@@ -901,7 +958,7 @@ pub fn add_sprite(
         } else {
             (1.0, 0.0)
         };
-        
+
         if let Some(ref mut sprites) = SPRITES {
             sprites.push(Sprite {
                 x,
@@ -932,11 +989,11 @@ pub fn get_sprite_count() -> u32 {
 fn place_wall_lamps(seed: u32) {
     unsafe {
         SPRITES = Some(Vec::new());
-        
+
         let mw = MAP_W as i32;
         let mh = MAP_H as i32;
         let mut lamp_seed = seed;
-        
+
         for y in 1..(mh - 1) {
             for x in 1..(mw - 1) {
                 if map_at(x, y) != 0 {
@@ -944,14 +1001,14 @@ fn place_wall_lamps(seed: u32) {
                     let south_open = map_at(x, y + 1) == 0;
                     let east_open = map_at(x + 1, y) == 0;
                     let west_open = map_at(x - 1, y) == 0;
-                    
+
                     let r = (lcg_next(&mut lamp_seed) % 100) as u8;
                     if r < 20 {
                         let open_sides = [north_open, south_open, east_open, west_open]
                             .iter()
                             .filter(|&&open| open)
                             .count();
-                        
+
                         if open_sides > 0 && open_sides <= 2 {
                             if north_open {
                                 add_sprite(x as f32 + 0.5, y as f32 + 0.9, 0, 0.0, -1.0, 8, 0.8);
@@ -975,7 +1032,7 @@ pub fn init() {
     // Generate a new random map on each init (seeded from Date.now())
     let mut seed = date_now() as u32;
     let map_w = 8 + (lcg_next(&mut seed) % 13) as usize; // 8..20
-    let map_h = 8 + (lcg_next(&mut seed) % 9) as usize;  // 8..16
+    let map_h = 8 + (lcg_next(&mut seed) % 9) as usize; // 8..16
     generate_map(map_w, map_h, seed);
 
     unsafe {
@@ -1004,7 +1061,7 @@ pub fn init() {
             POS_X = sx as f32 + 0.5;
             POS_Y = sy as f32 + 0.5;
         }
-        
+
         // Initialize sprites and place wall lamps
         place_wall_lamps(seed);
     }
@@ -1021,26 +1078,26 @@ pub fn step(forward: f32, turn: f32, strafe: f32, jump: f32, dt: f32) {
         // than a circle, allowing smooth sliding through diagonal corner gaps.
         // A point (px, py) collides with wall at (wx, wy) if:
         //   |px - closest_x| + |py - closest_y| < radius
-        
+
         let min_grid_x = (x - radius).floor() as i32;
         let max_grid_x = (x + radius).ceil() as i32;
         let min_grid_y = (y - radius).floor() as i32;
         let max_grid_y = (y + radius).ceil() as i32;
-        
+
         for grid_y in min_grid_y..=max_grid_y {
             for grid_x in min_grid_x..=max_grid_x {
                 if map_at(grid_x, grid_y) != 0 {
                     // Found a wall cell at [grid_x, grid_x+1) x [grid_y, grid_y+1)
-                    
+
                     // Find closest point on this wall cell to player position
                     let closest_x = x.max(grid_x as f32).min((grid_x + 1) as f32);
                     let closest_y = y.max(grid_y as f32).min((grid_y + 1) as f32);
-                    
+
                     // Use Manhattan distance (diamond shape) for collision
                     let dx = (x - closest_x).abs();
                     let dy = (y - closest_y).abs();
                     let manhattan_distance = dx + dy;
-                    
+
                     if manhattan_distance < radius {
                         return false; // Collision detected
                     }
@@ -1049,7 +1106,7 @@ pub fn step(forward: f32, turn: f32, strafe: f32, jump: f32, dt: f32) {
         }
         true
     }
-    
+
     // Detect collision and return the surface normal of the wall being hit.
     // Returns None if no collision, Some((nx, ny)) with the wall normal if collision.
     // For Manhattan offset: diagonal edges have normals like (±1/√2, ±1/√2)
@@ -1059,10 +1116,10 @@ pub fn step(forward: f32, turn: f32, strafe: f32, jump: f32, dt: f32) {
         let max_grid_x = (x + radius).ceil() as i32;
         let min_grid_y = (y - radius).floor() as i32;
         let max_grid_y = (y + radius).ceil() as i32;
-        
+
         let mut closest_dist = f32::INFINITY;
         let mut best_normal: Option<(f32, f32)> = None;
-        
+
         for grid_y in min_grid_y..=max_grid_y {
             for grid_x in min_grid_x..=max_grid_x {
                 if map_at(grid_x, grid_y) != 0 {
@@ -1071,31 +1128,31 @@ pub fn step(forward: f32, turn: f32, strafe: f32, jump: f32, dt: f32) {
                     let wx1 = (grid_x + 1) as f32;
                     let wy0 = grid_y as f32;
                     let wy1 = (grid_y + 1) as f32;
-                    
+
                     // Closest point on cell
                     let closest_x = x.max(wx0).min(wx1);
                     let closest_y = y.max(wy0).min(wy1);
-                    
+
                     let dx = x - closest_x;
                     let dy = y - closest_y;
                     let manhattan_dist = dx.abs() + dy.abs();
-                    
+
                     if manhattan_dist < radius && manhattan_dist < closest_dist {
                         closest_dist = manhattan_dist;
-                        
+
                         // Determine which surface: axis-aligned wall or diagonal corner
                         let on_left = (closest_x - wx0).abs() < 0.001;
                         let on_right = (closest_x - wx1).abs() < 0.001;
                         let on_bottom = (closest_y - wy0).abs() < 0.001;
                         let on_top = (closest_y - wy1).abs() < 0.001;
-                        
+
                         // Check if at corner (diagonal edge of Manhattan offset)
                         let at_corner = (on_left || on_right) && (on_bottom || on_top);
-                        
+
                         if at_corner {
                             // Diagonal edge - normal points away from corner
                             // Normalize the diagonal normal
-                            let inv_sqrt2 = 0.70710678118; // 1/sqrt(2)
+                            let inv_sqrt2 = 0.707_106_77; // 1/sqrt(2)
                             let nx = dx.signum() * inv_sqrt2;
                             let ny = dy.signum() * inv_sqrt2;
                             best_normal = Some((nx, ny));
@@ -1111,49 +1168,49 @@ pub fn step(forward: f32, turn: f32, strafe: f32, jump: f32, dt: f32) {
                 }
             }
         }
-        
+
         best_normal
     }
-    
+
     // Physics-based wall sliding: project movement vector onto wall tangent.
     // When hitting a wall, decompose the force into parallel (tangent) and
     // perpendicular (normal) components. Only the tangent component produces movement.
     fn slide_move(start_x: f32, start_y: f32, dx: f32, dy: f32, radius: f32) -> (f32, f32) {
         let target_x = start_x + dx;
         let target_y = start_y + dy;
-        
+
         // 1. Try full movement - no collision
         if is_position_clear(target_x, target_y, radius) {
             return (target_x, target_y);
         }
-        
+
         // 2. Collision detected - find the wall normal at target position
         if let Some((nx, ny)) = detect_collision_normal(target_x, target_y, radius) {
             // Project movement vector onto wall tangent (perpendicular to normal)
             // Tangent vector: rotate normal by 90° => tangent = (-ny, nx)
             let tx = -ny;
             let ty = nx;
-            
+
             // Project (dx, dy) onto tangent: dot product with tangent vector
             let projection = dx * tx + dy * ty;
-            
+
             // Movement along wall = projection * tangent_direction
             let slide_dx = projection * tx;
             let slide_dy = projection * ty;
-            
+
             let slide_x = start_x + slide_dx;
             let slide_y = start_y + slide_dy;
-            
+
             // Verify the slide position is valid
             if is_position_clear(slide_x, slide_y, radius) {
                 return (slide_x, slide_y);
             }
         }
-        
+
         // 3. Fallback: try axis-aligned sliding (for edge cases)
         let abs_dx = dx.abs();
         let abs_dy = dy.abs();
-        
+
         if abs_dx > abs_dy {
             if is_position_clear(target_x, start_y, radius) {
                 return (target_x, start_y);
@@ -1169,18 +1226,18 @@ pub fn step(forward: f32, turn: f32, strafe: f32, jump: f32, dt: f32) {
                 return (target_x, start_y);
             }
         }
-        
+
         // No movement possible
         (start_x, start_y)
     }
-    
+
     // Movement speeds are in world units per second, but code previously
     // used per-frame constants. We'll treat them as per-second and multiply
     // by dt so motion is framerate-independent.
     let move_speed = 2.5; // meters per second (forward/back)
     let rot_speed = 2.0; // radians per second
-    // collision buffer in meters: player stops this far before wall
-    // Reduced from 0.2 to 0.15 to allow tighter corner navigation
+                         // collision buffer in meters: player stops this far before wall
+                         // Reduced from 0.2 to 0.15 to allow tighter corner navigation
     let collide_radius: f32 = 0.15;
     // More realistic jump physics (m/s and m/s^2). Increase gravity
     // to make the arc quicker while keeping a reasonable apex.
@@ -1290,7 +1347,7 @@ pub fn regenerate_map(seed: u32) {
     // seed==0 -> use Date.now()
     let mut s = if seed == 0 { date_now() as u32 } else { seed };
     let map_w = 8 + (lcg_next(&mut s) % 13) as usize; // 8..20
-    let map_h = 8 + (lcg_next(&mut s) % 9) as usize;  // 8..16
+    let map_h = 8 + (lcg_next(&mut s) % 9) as usize; // 8..16
     generate_map(map_w, map_h, s);
 
     unsafe {
@@ -1313,7 +1370,7 @@ pub fn regenerate_map(seed: u32) {
             POS_Y = sy as f32 + 0.5;
         }
     }
-    
+
     place_wall_lamps(s);
 
     render_scene();
@@ -1322,8 +1379,16 @@ pub fn regenerate_map(seed: u32) {
 #[wasm_bindgen]
 pub fn regenerate_map_with_size(w: u32, h: u32, seed: u32) {
     let mut s = if seed == 0 { date_now() as u32 } else { seed };
-    let map_w = if w == 0 { 8 + (lcg_next(&mut s) % 13) as usize } else { w as usize };
-    let map_h = if h == 0 { 8 + (lcg_next(&mut s) % 9) as usize } else { h as usize };
+    let map_w = if w == 0 {
+        8 + (lcg_next(&mut s) % 13) as usize
+    } else {
+        w as usize
+    };
+    let map_h = if h == 0 {
+        8 + (lcg_next(&mut s) % 9) as usize
+    } else {
+        h as usize
+    };
     generate_map(map_w, map_h, s);
 
     unsafe {
@@ -1346,7 +1411,7 @@ pub fn regenerate_map_with_size(w: u32, h: u32, seed: u32) {
             POS_Y = sy as f32 + 0.5;
         }
     }
-    
+
     place_wall_lamps(s);
 
     render_scene();

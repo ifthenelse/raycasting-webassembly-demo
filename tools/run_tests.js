@@ -3,7 +3,8 @@ const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
 
-const ROOT = process.cwd();
+// Tests run against the production bundle (`npm run build` output).
+const ROOT = path.join(process.cwd(), 'dist');
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
 function contentType(file) {
@@ -17,6 +18,8 @@ function contentType(file) {
       return 'text/css; charset=utf-8';
     case '.png':
       return 'image/png';
+    case '.webp':
+      return 'image/webp';
     case '.jpg':
     case '.jpeg':
       return 'image/jpeg';
@@ -30,17 +33,10 @@ function contentType(file) {
 }
 
 const server = http.createServer((req, res) => {
-  const urlPath = decodeURIComponent(req.url.split('?')[0]);
+  const rawPath = decodeURIComponent(req.url.split('?')[0]);
 
-  // Tests expect the original non-Svelte frontend at /www/index.html (loads /www/main.js).
-  // If we were refactored to Svelte (index now loads /src/main.js), return a compatible index
-  // that loads the original `www/main.js` so puppeteer tests work without building the Svelte app.
-  if (urlPath === '/www/index.html' || urlPath === '/www/' || urlPath === '/www') {
-    const html = `<!doctype html><html><head><meta charset="utf-8"><title>Test</title></head><body><canvas id="screen"></canvas><script type="module" src="/www/main.js"></script></body></html>`;
-    res.setHeader('Content-Type', 'text/html; charset=utf-8');
-    res.end(html);
-    return;
-  }
+  // Tests still use the legacy /www/index.html URL; it is the built app's index page.
+  const urlPath = rawPath.replace(/^\/www(?=\/|$)/, '') || '/';
 
   let filePath = path.join(ROOT, urlPath);
   fs.stat(filePath, (err, st) => {
@@ -100,7 +96,7 @@ async function main() {
   });
 
   // find test scripts in tools/ matching test_*.js
-  const toolsDir = path.join(ROOT, 'tools');
+  const toolsDir = path.join(process.cwd(), 'tools');
   let files = [];
   try {
     files = fs

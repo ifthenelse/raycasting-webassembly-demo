@@ -73,13 +73,13 @@
       "last_updated": "2026-04-19T14:35:39Z"
     },
     "d97f5780-a52c-4cae-b0f9-aab06d7c10ef": {
-      "user_message_count": 5,
-      "agent_message_count": 78,
+      "user_message_count": 9,
+      "agent_message_count": 123,
       "start_timestamp": "2026-10-16T12:21:10.203Z",
-      "end_timestamp": "2026-10-16T12:27:11.305Z",
-      "markdown_size_bytes": 138165,
+      "end_timestamp": "2026-10-16T12:52:08.619Z",
+      "markdown_size_bytes": 183801,
       "provider": "claude",
-      "last_updated": "2026-10-16T12:27:11Z"
+      "last_updated": "2026-10-16T12:52:08Z"
     },
     "dd0b80eb-e1bd-47d7-a370-02ccdd0eac4a": {
       "user_message_count": 2,

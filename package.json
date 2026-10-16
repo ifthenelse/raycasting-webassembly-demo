@@ -13,6 +13,7 @@
     "preview": "vite preview",
     "build:wasm": "wasm-pack build --target web --out-dir pkg",
     "build": "npm run build:wasm && npm run build:web",
+    "pretest": "npm run build",
     "test": "node tools/run_tests.js",
     "format": "prettier --write \"**/*.{js,svelte,json,css,html,md}\""
   },

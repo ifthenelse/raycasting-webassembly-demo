@@ -15,6 +15,8 @@ jobs:
         with:
           node-version-file: .node-version
           cache: npm
+      - run: rustup target add wasm32-unknown-unknown
+      - run: curl -sSf https://rustwasm.github.io/wasm-pack/installer/init.sh | sh
       - run: npm ci
       - run: bash scripts/verify
       - run: npm audit --omit=dev --audit-level=high

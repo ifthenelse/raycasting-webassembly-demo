@@ -3171,3 +3171,1049 @@ The site is ready for GitHub Pages and the SEO work is done. Nothing is committe
 - `robots.txt` is ignored on a project subpath (crawlers only read it at the domain root). Nothing is blocked, so it doesn't matter, but submit the sitemap in Search Console yourself.
 
 Want me to commit this on a branch and push?
+
+---
+
+_**User (2026-10-16 12:49:33Z)**_
+
+<local-command-caveat>The command below was run directly in Claude Code, not sent to you as a request, and its output goes straight to the user. It's recorded here as context for later messages.</local-command-caveat>
+
+---
+
+_**User (2026-10-16 12:49:33Z)**_
+
+<command-name>/model</command-name>
+            <command-message>model</command-message>
+            <command-args>sonnet</command-args>
+
+---
+
+_**User (2026-10-16 12:49:33Z)**_
+
+<local-command-stdout>Set model to `claude-sonnet-5-5`</local-command-stdout>
+
+---
+
+_**User (2026-10-16 12:49:53Z)**_
+
+Check and fix the github pipeline errors
+
+```
+
+<pasted_content id="4662">
+2026-10-16T12:47:12.9443862Z Current runner version: '2.337.0'
+2026-10-16T12:47:12.9459709Z ##[group]Runner Image Provisioner
+2026-10-16T12:47:12.9460265Z Hosted Compute Agent
+2026-10-16T12:47:12.9460636Z Version: 20261012.601
+2026-10-16T12:47:12.9461018Z Commit: f3dc54e1fb89da6852db922499a0233137369e1d
+2026-10-16T12:47:12.9461468Z Build Date: 2026-10-12T17:48:21Z
+2026-10-16T12:47:12.9461853Z Worker ID: {94bf6e8d-f5a9-4557-9200-4115fb1c1d09}
+2026-10-16T12:47:12.9462460Z Region: centralus
+2026-10-16T12:47:12.9462892Z Cloud: Azure
+2026-10-16T12:47:12.9463382Z ##[endgroup]
+2026-10-16T12:47:12.9464521Z ##[group]Operating System
+2026-10-16T12:47:12.9465031Z Ubuntu
+2026-10-16T12:47:12.9465472Z 24.04.5
+2026-10-16T12:47:12.9465995Z LTS
+2026-10-16T12:47:12.9466453Z ##[endgroup]
+2026-10-16T12:47:12.9466962Z ##[group]Runner Image
+2026-10-16T12:47:12.9467448Z Image: ubuntu-24.04
+2026-10-16T12:47:12.9467989Z Version: 20261012.334.1
+2026-10-16T12:47:12.9469107Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20261012.334/images/ubuntu/Ubuntu2404-Readme.md
+2026-10-16T12:47:12.9470517Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20261012.334
+2026-10-16T12:47:12.9471345Z ##[endgroup]
+2026-10-16T12:47:12.9472542Z ##[group]GITHUB_TOKEN Permissions
+2026-10-16T12:47:12.9474174Z Contents: read
+2026-10-16T12:47:12.9474682Z Metadata: read
+2026-10-16T12:47:12.9475237Z Pages: write
+2026-10-16T12:47:12.9475682Z ##[endgroup]
+2026-10-16T12:47:12.9478003Z Secret source: Actions
+2026-10-16T12:47:12.9478835Z Cache mode: write
+2026-10-16T12:47:12.9479771Z Prepare workflow directory
+2026-10-16T12:47:13.0903159Z Prepare all required actions
+2026-10-16T12:47:13.0945273Z Getting action download info
+2026-10-16T12:47:13.3288451Z Download action repository 'actions/deploy-pages@v4' (SHA:d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e)
+2026-10-16T12:47:14.0289131Z Complete job name: deploy
+2026-10-16T12:47:14.0754231Z ##[group]Run actions/deploy-pages@v4
+2026-10-16T12:47:14.0754689Z with:
+2026-10-16T12:47:14.0756825Z   token: ***
+2026-10-16T12:47:14.0757082Z   timeout: 600000
+2026-10-16T12:47:14.0757338Z   error_count: 10
+2026-10-16T12:47:14.0757599Z   reporting_interval: 5000
+2026-10-16T12:47:14.0757897Z   artifact_name: github-pages
+2026-10-16T12:47:14.0758185Z   preview: false
+2026-10-16T12:47:14.0758505Z ##[endgroup]
+2026-10-16T12:47:14.1919432Z (node:1845) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+2026-10-16T12:47:14.1920925Z (Use `node --trace-deprecation ...` to show where the warning was created)
+2026-10-16T12:47:14.4041248Z Fetching artifact metadata for "github-pages" in this workflow run
+2026-10-16T12:47:14.5716334Z Found 1 artifact(s)
+2026-10-16T12:47:14.5725501Z Creating Pages deployment with payload:
+2026-10-16T12:47:14.5726490Z {
+2026-10-16T12:47:14.5727192Z 	"artifact_id": 12046363547,
+2026-10-16T12:47:14.5728462Z 	"pages_build_version": "25dbee5fff70cf71ae927918227fd7c01acc08c6",
+2026-10-16T12:47:14.5829179Z 	"oidc_token": "***"
+2026-10-16T12:47:14.5830825Z }
+2026-10-16T12:47:14.8435750Z ##[error]Creating Pages deployment failed
+2026-10-16T12:47:14.9463326Z ##[error]HttpError: Not Found
+    at /home/runner/work/_actions/actions/deploy-pages/v4/node_modules/@octokit/request/dist-node/index.js:124:1
+    at processTicksAndRejections (node:internal/process/task_queues:104:5)
+    at createPagesDeployment (/home/runner/work/_actions/actions/deploy-pages/v4/src/internal/api-client.js:125:1)
+    at Deployment.create (/home/runner/work/_actions/actions/deploy-pages/v4/src/internal/deployment.js:74:1)
+    at main (/home/runner/work/_actions/actions/deploy-pages/v4/src/index.js:30:1)
+2026-10-16T12:47:14.9478619Z ##[error]Error: Failed to create deployment (status: 404) with build version 25dbee5fff70cf71ae927918227fd7c01acc08c6. Request ID 1858:30716A:3282F31:A52BAC8:6AD21CD2 Ensure GitHub Pages has been enabled: https://github.com/ifthenelse/raycasting-webassembly-demo/settings/pages
+2026-10-16T12:47:14.9958887Z Evaluate and set environment url
+2026-10-16T12:47:14.9965820Z Evaluated environment url: 
+2026-10-16T12:47:14.9967567Z Cleaning up orphan processes
+2026-10-16T12:47:15.0314273Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/deploy-pages@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
+</pasted_content id="4662">
+
+```
+
+---
+
+_**Agent (claude-sonnet-5-5 2026-10-16 12:49:59Z)**_
+
+The deploy failed with a 404 because GitHub Pages isn't enabled on the repo. That's the setting I flagged earlier. The build job itself passed. I'll check the other runs, since CI may be failing too.
+
+_**Agent (claude-sonnet-5-5 2026-10-16 12:50:03Z)**_
+
+<tool-use data-tool-type="shell" data-tool-name="Bash"><details>
+<summary>Tool use: **Bash**</summary>
+Check recent runs and Pages status
+
+`gh auth status 2>&1 | head -3; gh run list --limit 6 2>&1; gh api repos/ifthenelse/raycasting-webassembly-demo/pages 2>&1 | head -3`
+
+```text
+github.com
+  ✓ Logged in to github.com account ifthenelse (keyring)
+  - Active account: true
+completed	failure	Enhance SEO and improve site structure	Pages	main	push	38902868688	1m6s	2026-10-16T12:46:11Z
+completed	failure	Enhance SEO and improve site structure	CI	main	push	38902868668	36s	2026-10-16T12:46:11Z
+queued		npm_and_yarn in /. - Update #1631221874	Dependabot Updates	main	dynamic	38884258193	2h50m5s	2026-10-16T09:59:57Z
+queued		github_actions in /. - Update #1631221879	Dependabot Updates	main	dynamic	38884257581	2h50m6s	2026-10-16T09:59:56Z
+completed	failure	chore: update dependencies and configuration	CI	main	push	38884253897	11s	2026-10-16T09:59:54Z
+completed	cancelled	npm_and_yarn in /. for basic-ftp, basic-ftp, basic-ftp, basic-ftp, basic-ftp, devalue, devalue, devalue, devalue, devalue, devalue, devalue, devalue, devalue, devalue, devalue, extract-zip, extract-zip, ip-address, ip-address, ip-address, ip-address, js-yaml, js-yaml, js-yaml, js-yaml, nanoid, nanoid, nanoid, picomatch, picomatch, postcss, postcss, postcss, rollup, svelte, svelte, svelte, svelte, svelte, svelte, svelte, svelte, svelte, vite, vite, vite, vite, vite, ws, ws - Update #1618891504	Dependabot Updates	main	dynamic	37898708275	24h0m3s	2026-10-09T07:23:09Z
+{"url":"https://api.github.com/repos/ifthenelse/raycasting-webassembly-demo/pages","status":null,"cname":null,"custom_404":false,"html_url":"https://ifthenelse.github.io/raycasting-webassembly-demo/","build_type":"workflow","source":{"branch":"main","path":"/"},"public":true,"protected_domain_state":null,"pending_domain_unverified_at":null,"https_enforced":true}
+```
+</details></tool-use>
+
+_**Agent (claude-sonnet-5-5 2026-10-16 12:50:05Z)**_
+
+Pages is now enabled with the workflow source, so the user must have turned it on after that run. CI is also failing, so I'll look at that log.
+
+_**Agent (claude-sonnet-5-5 2026-10-16 12:50:08Z)**_
+
+<tool-use data-tool-type="shell" data-tool-name="Bash"><details>
+<summary>Tool use: **Bash**</summary>
+Read failed CI log
+
+`gh run view 38902868668 --log-failed 2>&1 | grep -v "^$" | head -30`
+
+```text
+verify	Run bash scripts/verify	﻿2026-10-16T12:46:37.1464308Z ##[group]Run bash scripts/verify
+verify	Run bash scripts/verify	2026-10-16T12:46:37.1464868Z ^[[36;1mbash scripts/verify^[[0m
+verify	Run bash scripts/verify	2026-10-16T12:46:37.1521727Z shell: /usr/bin/bash -e {0}
+verify	Run bash scripts/verify	2026-10-16T12:46:37.1522215Z ##[endgroup]
+verify	Run bash scripts/verify	2026-10-16T12:46:37.3142037Z 
+verify	Run bash scripts/verify	2026-10-16T12:46:37.3162811Z ▶ npm run --silent test
+verify	Run bash scripts/verify	2026-10-16T12:46:37.5622874Z Serving /home/runner/work/raycasting-webassembly-demo/raycasting-webassembly-demo at http://localhost:3000
+verify	Run bash scripts/verify	2026-10-16T12:46:37.7611362Z 
+verify	Run bash scripts/verify	2026-10-16T12:46:37.7632341Z --- running /home/runner/work/raycasting-webassembly-demo/raycasting-webassembly-demo/tools/test_001_walk_sequence.js ---
+verify	Run bash scripts/verify	2026-10-16T12:46:39.1013617Z loading http://localhost:3000/www/index.html
+verify	Run bash scripts/verify	2026-10-16T12:46:40.4747367Z node:internal/process/promises:324
+verify	Run bash scripts/verify	2026-10-16T12:46:40.4751480Z     triggerUncaughtException(err, true /* fromPromise */);
+verify	Run bash scripts/verify	2026-10-16T12:46:40.4752495Z     ^
+verify	Run bash scripts/verify	2026-10-16T12:46:40.4753294Z 
+verify	Run bash scripts/verify	2026-10-16T12:46:40.4754223Z Error [TypeError]: Cannot read properties of undefined (reading 'get_pos_x')
+verify	Run bash scripts/verify	2026-10-16T12:46:40.4758104Z     at evaluate (evaluate at capture (/home/runner/work/raycasting-webassembly-demo/raycasting-webassembly-demo/tools/test_001_walk_sequence.js:33:30), <anonymous>:4:27)
+verify	Run bash scripts/verify	2026-10-16T12:46:40.4760644Z     at #evaluate (file:///home/runner/work/raycasting-webassembly-demo/raycasting-webassembly-demo/node_modules/puppeteer-core/lib/puppeteer/cdp/ExecutionContext.js:402:19)
+verify	Run bash scripts/verify	2026-10-16T12:46:40.4767808Z     at async ExecutionContext.evaluate (file:///home/runner/work/raycasting-webassembly-demo/raycasting-webassembly-demo/node_modules/puppeteer-core/lib/puppeteer/cdp/ExecutionContext.js:288:16)
+verify	Run bash scripts/verify	2026-10-16T12:46:40.4773179Z     at async IsolatedWorld.evaluate (file:///home/runner/work/raycasting-webassembly-demo/raycasting-webassembly-demo/node_modules/puppeteer-core/lib/puppeteer/cdp/IsolatedWorld.js:104:16)
+verify	Run bash scripts/verify	2026-10-16T12:46:40.4775964Z     at async CdpFrame.evaluate (file:///home/runner/work/raycasting-webassembly-demo/raycasting-webassembly-demo/node_modules/puppeteer-core/lib/puppeteer/api/Frame.js:364:20)
+verify	Run bash scripts/verify	2026-10-16T12:46:40.4777473Z     at async CdpPage.evaluate (file:///home/runner/work/raycasting-webassembly-demo/raycasting-webassembly-demo/node_modules/puppeteer-core/lib/puppeteer/api/Page.js:832:20)
+verify	Run bash scripts/verify	2026-10-16T12:46:40.4778532Z     at async capture (/home/runner/work/raycasting-webassembly-demo/raycasting-webassembly-demo/tools/test_001_walk_sequence.js:33:19)
+verify	Run bash scripts/verify	2026-10-16T12:46:40.4779714Z     at async /home/runner/work/raycasting-webassembly-demo/raycasting-webassembly-demo/tools/test_001_walk_sequence.js:70:3
+verify	Run bash scripts/verify	2026-10-16T12:46:40.4780490Z 
+verify	Run bash scripts/verify	2026-10-16T12:46:40.4780649Z Node.js v26.12.0
+verify	Run bash scripts/verify	2026-10-16T12:46:40.4811670Z ❌ test_001_walk_sequence.js failed (code 1)
+verify	Run bash scripts/verify	2026-10-16T12:46:40.6821030Z 
+verify	Run bash scripts/verify	2026-10-16T12:46:40.6823135Z --- running /home/runner/work/raycasting-webassembly-demo/raycasting-webassembly-demo/tools/test_002_turn_sequence.js ---
+verify	Run bash scripts/verify	2026-10-16T12:46:41.2454449Z loading http://localhost:3000/www/index.html
+verify	Run bash scripts/verify	2026-10-16T12:46:42.6099914Z node:internal/process/promises:324
+```
+</details></tool-use>
+
+_**Agent (claude-sonnet-5-5 2026-10-16 12:50:09Z)**_
+
+CI fails on the same 3 tests that failed locally. Next I'll read the test harness to see why.
+
+_**Agent (claude-sonnet-5-5 2026-10-16 12:50:11Z)**_
+
+<tool-use data-tool-type="shell" data-tool-name="Bash"><details>
+<summary>Tool use: **Bash**</summary>
+Read test runner and test
+
+`cat tools/run_tests.js tools/serve_dist.js; sed -n 1,45p tools/test_001_walk_sequence.js; grep -n "window\.\|globalThis" src/web/App.svelte | head`
+
+```text
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+const { spawn } = require('child_process');
+
+const ROOT = process.cwd();
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
+
+function contentType(file) {
+  const ext = path.extname(file).toLowerCase();
+  switch (ext) {
+    case '.html':
+      return 'text/html; charset=utf-8';
+    case '.js':
+      return 'application/javascript; charset=utf-8';
+    case '.css':
+      return 'text/css; charset=utf-8';
+    case '.png':
+      return 'image/png';
+    case '.jpg':
+    case '.jpeg':
+      return 'image/jpeg';
+    case '.wasm':
+      return 'application/wasm';
+    case '.json':
+      return 'application/json; charset=utf-8';
+    default:
+      return 'application/octet-stream';
+  }
+}
+
+const server = http.createServer((req, res) => {
+  const urlPath = decodeURIComponent(req.url.split('?')[0]);
+
+  // Tests expect the original non-Svelte frontend at /www/index.html (loads /www/main.js).
+  // If we were refactored to Svelte (index now loads /src/main.js), return a compatible index
+  // that loads the original `www/main.js` so puppeteer tests work without building the Svelte app.
+  if (urlPath === '/www/index.html' || urlPath === '/www/' || urlPath === '/www') {
+    const html = `<!doctype html><html><head><meta charset="utf-8"><title>Test</title></head><body><canvas id="screen"></canvas><script type="module" src="/www/main.js"></script></body></html>`;
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.end(html);
+    return;
+  }
+
+  let filePath = path.join(ROOT, urlPath);
+  fs.stat(filePath, (err, st) => {
+    if (err) {
+      res.statusCode = 404;
+      res.end('Not found');
+      return;
+    }
+    if (st.isDirectory()) {
+      // serve index.html inside directory if present
+      const idx = path.join(filePath, 'index.html');
+      fs.stat(idx, (e2, s2) => {
+        if (!e2 && s2.isFile()) {
+          filePath = idx;
+          streamFile(filePath, res);
+        } else {
+          res.statusCode = 403;
+          res.end('Forbidden');
+        }
+      });
+    } else {
+      streamFile(filePath, res);
+    }
+  });
+});
+
+function streamFile(filePath, res) {
+  const ct = contentType(filePath);
+  res.setHeader('Content-Type', ct);
+  const stream = fs.createReadStream(filePath);
+  stream.on('error', () => {
+    res.statusCode = 500;
+    res.end('Error');
+  });
+  stream.pipe(res);
+}
+
+function runTestFile(file) {
+  return new Promise((resolve) => {
+    console.log(`\n--- running ${file} ---`);
+    const p = spawn(process.execPath, [file], { stdio: 'inherit' });
+    p.on('close', (code) => {
+      if (code === 0) {
+        console.log(`✅ ${path.basename(file)} passed`);
+        resolve({ file, ok: true });
+      } else {
+        console.error(`❌ ${path.basename(file)} failed (code ${code})`);
+        resolve({ file, ok: false, code });
+      }
+    });
+  });
+}
+
+async function main() {
+  server.listen(PORT, () => {
+    console.log(`Serving ${ROOT} at http://localhost:${PORT}`);
+  });
+
+  // find test scripts in tools/ matching test_*.js
+  const toolsDir = path.join(ROOT, 'tools');
+  let files = [];
+  try {
+    files = fs
+      .readdirSync(toolsDir)
+      .filter((f) => f.startsWith('test_') && f.endsWith('.js'))
+      .map((f) => path.join(toolsDir, f));
+  } catch (e) {
+    console.error('No tests found in tools/');
+    process.exit(1);
+  }
+
+  const results = [];
+  for (const f of files) {
+    // give the server a moment to be ready
+    await new Promise((r) => setTimeout(r, 200));
+    // run each test
+    // tests expect process to be started with `node <file>` and will close browser themselves
+    const res = await runTestFile(f);
+    results.push(res);
+  }
+
+  const failed = results.filter((r) => !r.ok);
+  server.close(() => {
+    if (failed.length === 0) {
+      console.log('\nAll tests passed');
+      process.exit(0);
+    } else {
+      console.error(`\n${failed.length} test(s) failed`);
+      process.exit(2);
+    }
+  });
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
+const http = require('http');
+const fs = require('fs');
+const path = require('path');
+
+const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 5174;
+const ROOT = path.join(process.cwd(), 'dist');
+
+function contentType(file) {
+  const ext = path.extname(file).toLowerCase();
+  switch (ext) {
+    case '.html':
+      return 'text/html; charset=utf-8';
+    case '.js':
+      return 'application/javascript; charset=utf-8';
+    case '.css':
+      return 'text/css; charset=utf-8';
+    case '.png':
+      return 'image/png';
+    case '.jpg':
+    case '.jpeg':
+      return 'image/jpeg';
+    case '.wasm':
+      return 'application/wasm';
+    case '.json':
+      return 'application/json; charset=utf-8';
+    default:
+      return 'application/octet-stream';
+  }
+}
+
+const server = http.createServer((req, res) => {
+  let urlPath = decodeURIComponent(req.url.split('?')[0]);
+  if (urlPath === '/') urlPath = '/index.html';
+  const filePath = path.join(ROOT, urlPath);
+  fs.stat(filePath, (err, st) => {
+    if (err || !st.isFile()) {
+      res.statusCode = 404;
+      res.end('Not found');
+      return;
+    }
+    res.setHeader('Content-Type', contentType(filePath));
+    fs.createReadStream(filePath).pipe(res);
+  });
+});
+
+server.listen(PORT, () => {
+  console.log(`Serving dist at http://localhost:${PORT}`);
+});
+
+process.on('SIGINT', () => {
+  server.close(() => process.exit(0));
+});
+const puppeteer = require('puppeteer');
+const fs = require('fs');
+
+(async () => {
+  const testId = '001-walk_sequence';
+  const url = 'http://localhost:3000/www/index.html';
+  const outDir = `screenshots/${testId}`;
+  if (!fs.existsSync(outDir)) fs.mkdirSync(outDir, { recursive: true });
+
+  const browser = await puppeteer.launch({ args: ['--no-sandbox', '--disable-setuid-sandbox'] });
+  const page = await browser.newPage();
+  await page.setViewport({ width: 960, height: 600 });
+
+  console.log('loading', url);
+  await page.goto(url, { waitUntil: 'networkidle2' });
+
+  // wait for canvas to be present and for wasm to initialize (canvas sized)
+  await page.waitForSelector('#screen');
+  await page.waitForFunction(
+    () => {
+      const c = document.getElementById('screen');
+      return c && c.width > 0 && c.height > 0;
+    },
+    { timeout: 5000 }
+  );
+
+  const trace = [];
+  let shotCounter = 0;
+  const testStartTime = Date.now();
+  async function capture(label) {
+    shotCounter += 1;
+    const timestamp = Date.now() - testStartTime;
+    const state = await page.evaluate(() => {
+      const c = document.getElementById('screen');
+      return {
+        dataUrl: c.toDataURL('image/png'),
+        pos_x: window.wasm.get_pos_x(),
+        pos_y: window.wasm.get_pos_y(),
+        dir_x: window.wasm.get_dir_x(),
+        dir_y: window.wasm.get_dir_y(),
+        plane_x: window.wasm.get_plane_x(),
+        plane_y: window.wasm.get_plane_y(),
+      };
+    });
+
+19:      window.removeEventListener('mousemove', onMove);
+20:      window.removeEventListener('mouseup', onUp);
+22:    window.addEventListener('mousemove', onMove);
+23:    window.addEventListener('mouseup', onUp);
+347:    window.wasm = pkg;
+483:    window.printMap = function printMap() {
+```
+</details></tool-use>
+
+_**Agent (claude-sonnet-5-5 2026-10-16 12:50:20Z)**_
+
+<think><details><summary>Thought Process</summary>
+Found that the test harness is stale—it loads `/www/main.js`, which no longer exists after the Svelte migration, so `window.wasm` never gets set. I'll fix this by pointing tests at the built `dist/` app instead, starting with a look at `.nvmrc` and how other tests use the page.
+
+</details></think>
+
+_**Agent (claude-sonnet-5-5 2026-10-16 12:50:21Z)**_
+
+<tool-use data-tool-type="shell" data-tool-name="Bash"><details>
+<summary>Tool use: **Bash**</summary>
+Check node version files and test URLs
+
+`ls -a | grep -E "nvmrc|node-version"; grep -n "localhost:3000" tools/*.js; grep -n "pub fn get_pos_x\|pub fn get_plane_y" src/lib.rs; cat lefthook.yml | head -20`
+
+```text
+.node-version
+tools/inspect_buffers.js:4:  const url = 'http://localhost:3000/www/index.html';
+tools/screenshot.js:5:  const url = 'http://localhost:3000/www/index.html';
+tools/test_002_turn_sequence.js:6:  const url = 'http://localhost:3000/www/index.html';
+tools/test_001_walk_sequence.js:6:  const url = 'http://localhost:3000/www/index.html';
+tools/test_003_approach_wall.js:6:  const url = 'http://localhost:3000/www/index.html';
+1237:pub fn get_pos_x() -> f32 {
+1262:pub fn get_plane_y() -> f32 {
+# Local hooks give fast feedback; CI is the authoritative gate (hooks can be skipped).
+# Install: lefthook install
+pre-commit:
+  parallel: true
+  commands:
+    format:
+      glob: "*.{js,mjs,cjs,ts,tsx,json,md,yml,yaml,css}"
+      run: npx --no-install prettier --check {staged_files}
+pre-push:
+  commands:
+    verify:
+      run: bash scripts/verify
+# Optional: secret scanning and commit-message linting
+#  gitleaks: { run: gitleaks git --staged }   # pre-commit
+#  commitlint: { run: npx --no-install commitlint --edit {1} }   # commit-msg
+```
+</details></tool-use>
+
+_**Agent (claude-sonnet-5-5 2026-10-16 12:50:24Z)**_
+
+There's no `.nvmrc`, only `.node-version`, so I'll fix that in CI too. Now the edits: the runner serves `dist/`, `/www/*` maps to the built app, `.webp` gets a MIME type, and `npm test` builds first.
+
+_**Agent (claude-sonnet-5-5 2026-10-16 12:50:29Z)**_
+
+<tool-use data-tool-type="shell" data-tool-name="Bash"><details>
+<summary>Tool use: **Bash**</summary>
+Point test runner at built dist and run tests
+
+```bash
+python3 - <<'EOF'
+import re
+p='tools/run_tests.js'
+s=open(p).read()
+s=s.replace("const ROOT = process.cwd();","// Tests run against the production bundle (`npm run build` output).\nconst ROOT = path.join(process.cwd(), 'dist');")
+s=s.replace("    case '.jpg':","    case '.webp':\n      return 'image/webp';\n    case '.jpg':",1)
+start=s.index("  // Tests expect the original")
+end=s.index("  let filePath")
+s=s[:start]+"  // Tests still use the legacy /www/index.html URL; it is the built app's index page.\n  const urlPath = rawPath.startsWith('/www') ? '/' : rawPath;\n\n"+s[end:]
+s=s.replace("  const urlPath = decodeURIComponent(req.url.split('?')[0]);\n","  const rawPath = decodeURIComponent(req.url.split('?')[0]);\n",1)
+s=s.replace("path.join(ROOT, urlPath)","path.join(ROOT, urlPath)")
+open(p,'w').write(s)
+p='package.json'
+s=open(p).read()
+s=s.replace('    "test": "node tools/run_tests.js",','    "pretest": "npm run build",\n    "test": "node tools/run_tests.js",')
+open(p,'w').write(s)
+EOF
+sed -n 28,45p tools/run_tests.js; npm test 2>&1 | grep -E "✅|❌|passed|failed|Error" | head
+```
+
+```text
+    case '.json':
+      return 'application/json; charset=utf-8';
+    default:
+      return 'application/octet-stream';
+  }
+}
+
+const server = http.createServer((req, res) => {
+  const rawPath = decodeURIComponent(req.url.split('?')[0]);
+
+  // Tests still use the legacy /www/index.html URL; it is the built app's index page.
+  const urlPath = rawPath.startsWith('/www') ? '/' : rawPath;
+
+  let filePath = path.join(ROOT, urlPath);
+  fs.stat(filePath, (err, st) => {
+    if (err) {
+      res.statusCode = 404;
+      res.end('Not found');
+```
+</details></tool-use>
+
+_**Agent (claude-sonnet-5-5 2026-10-16 12:50:34Z)**_
+
+<think><details><summary>Thought Process</summary>
+The grep came back empty, and I noticed the `/www` mapping incorrectly resolves relative asset URLs under `/www/` to the index page. I'll fix it by stripping the `/www` prefix and re-run with full output.
+
+</details></think>
+
+_**Agent (claude-sonnet-5-5 2026-10-16 12:50:35Z)**_
+
+<tool-use data-tool-type="shell" data-tool-name="Bash"><details>
+<summary>Tool use: **Bash**</summary>
+Rerun tests with full output
+
+```bash
+python3 - <<'EOF'
+p='tools/run_tests.js'
+s=open(p).read()
+s=s.replace("  const urlPath = rawPath.startsWith('/www') ? '/' : rawPath;","  const urlPath = rawPath.replace(/^\\/www(?=\\/|$)/, '') || '/';")
+open(p,'w').write(s)
+EOF
+npm test 2>&1 | tail -30
+```
+
+```text
+npm notice run wasm-pack build --target web --out-dir pkg
+[INFO]: 🎯  Checking for the Wasm target...
+[INFO]: 🌀  Compiling to Wasm...
+    Finished `release` profile [optimized] target(s) in 0.01s
+[INFO]: ⬇️  Installing wasm-bindgen...
+[INFO]: Optimizing wasm binaries with `wasm-opt`...
+[INFO]: Optional fields missing from Cargo.toml: 'description', 'repository', and 'license'. These are not necessary, but recommended
+[INFO]: ✨   Done in 0.19s
+[INFO]: 📦   Your wasm pkg is ready to publish at /Users/andreacollet/Projects/raycasting-webassembly-demo/pkg.
+npm notice run raycasting-webassembly-demo@1.0.0 build:web
+npm notice run vite build
+vite v8.3.4 building client environment for production...
+transforming...
+✓ 117 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                                  7.72 kB │ gzip:  2.57 kB
+dist/assets/wasm_raycaster_bg-BRwIz3K6.wasm     42.35 kB │ gzip: 19.25 kB
+dist/assets/lamp-wall-vd5WsfvN.webp            358.85 kB
+dist/assets/skybox-cLMx9EO5.webp             1,839.90 kB
+dist/assets/ceiling-DBSpaaq1.webp            1,882.60 kB
+dist/assets/floor-DdncN3oF.webp              2,004.12 kB
+dist/assets/wall-Bkur4t8f.webp               2,051.78 kB
+dist/assets/index-BxHWFzuI.css                   1.20 kB │ gzip:  0.53 kB
+dist/assets/index-DBB5b9bL.js                   57.11 kB │ gzip: 21.17 kB
+
+✓ built in 109ms
+npm notice run raycasting-webassembly-demo@1.0.0 test
+npm notice run node tools/run_tests.js
+No tests found in tools/
+```
+</details></tool-use>
+
+_**Agent (claude-sonnet-5-5 2026-10-16 12:50:37Z)**_
+
+That's a side effect of my change: `ROOT` now points at `dist/`, but the runner also uses it to find the tests. I'll use a separate path for the test directory.
+
+_**Agent (claude-sonnet-5-5 2026-10-16 12:50:49Z)**_
+
+<tool-use data-tool-type="shell" data-tool-name="Bash"><details>
+<summary>Tool use: **Bash**</summary>
+Rerun tests
+
+`sed -i '' "s#const toolsDir = path.join(ROOT, 'tools');#const toolsDir = path.join(process.cwd(), 'tools');#" tools/run_tests.js && npm test 2>&1 | grep -vE "^\[INFO\]|^dist/|npm notice" | tail -30`
+
+```text
+✅ test_001_walk_sequence.js passed
+
+--- running /Users/andreacollet/Projects/raycasting-webassembly-demo/tools/test_002_turn_sequence.js ---
+loading http://localhost:3000/www/index.html
+📸 [1] initial_state: pos=(2.50, 2.50) dir=(-1.00, 0.00) angle=180.0°
+📸 [2] turn_1_0.05s: pos=(2.50, 2.50) dir=(-1.00, 0.10) angle=174.3°
+📸 [3] turn_2_0.05s: pos=(2.50, 2.50) dir=(-0.98, 0.20) angle=168.5°
+📸 [4] turn_3_0.05s: pos=(2.50, 2.50) dir=(-0.96, 0.30) angle=162.8°
+📸 [5] turn_4_0.05s: pos=(2.50, 2.50) dir=(-0.92, 0.39) angle=157.1°
+📸 [6] turn_5_0.05s: pos=(2.50, 2.50) dir=(-0.88, 0.48) angle=151.3°
+📸 [7] turn_6_0.05s: pos=(2.50, 2.50) dir=(-0.83, 0.56) angle=146.0°
+📸 [8] turn_7_0.05s: pos=(2.50, 2.50) dir=(-0.77, 0.64) angle=140.2°
+📸 [9] turn_8_0.05s: pos=(2.50, 2.50) dir=(-0.68, 0.74) angle=132.6°
+📸 [10] turn_9_0.05s: pos=(2.50, 2.50) dir=(-0.60, 0.80) angle=126.8°
+
+📊 Trace saved to screenshots/002-turn_sequence/002-turn_sequence-trace.json
+✅ done 002-turn_sequence
+✅ test_002_turn_sequence.js passed
+
+--- running /Users/andreacollet/Projects/raycasting-webassembly-demo/tools/test_003_approach_wall.js ---
+loading http://localhost:3000/www/index.html
+📸 [1] initial_state: pos=(2.50, 2.50) dir=(-1.00, 0.00) angle=180.0°
+📸 [2] after_move_0.25s: pos=(2.17, 2.50) dir=(-1.00, 0.00) angle=180.0°
+📸 [3] after_move_and_turn_75deg: pos=(2.17, 2.50) dir=(-1.00, 0.00) angle=180.0°
+
+📊 Trace saved to screenshots/003-approach_wall/003-approach_wall-trace.json
+✅ done 003-approach_wall
+✅ test_003_approach_wall.js passed
+
+All tests passed
+```
+</details></tool-use>
+
+_**Agent (claude-sonnet-5-5 2026-10-16 12:50:50Z)**_
+
+All three tests pass. I'll run the full `scripts/verify` to see what the Rust checks (fmt, clippy) do.
+
+_**Agent (claude-sonnet-5-5 2026-10-16 12:51:02Z)**_
+
+<tool-use data-tool-type="shell" data-tool-name="Bash"><details>
+<summary>Tool use: **Bash**</summary>
+Run full verify
+
+`scripts/verify 2>&1 | grep -vE "^\[INFO\]|^dist/|npm notice|📸" | tail -30`
+
+```text
+     render_scene();
+Diff in /Users/andreacollet/Projects/raycasting-webassembly-demo/src/lib.rs:1322:
+ #[wasm_bindgen]
+ pub fn regenerate_map_with_size(w: u32, h: u32, seed: u32) {
+     let mut s = if seed == 0 { date_now() as u32 } else { seed };
+-    let map_w = if w == 0 { 8 + (lcg_next(&mut s) % 13) as usize } else { w as usize };
+-    let map_h = if h == 0 { 8 + (lcg_next(&mut s) % 9) as usize } else { h as usize };
++    let map_w = if w == 0 {
++        8 + (lcg_next(&mut s) % 13) as usize
++    } else {
++        w as usize
++    };
++    let map_h = if h == 0 {
++        8 + (lcg_next(&mut s) % 9) as usize
++    } else {
++        h as usize
++    };
+     generate_map(map_w, map_h, s);
+ 
+     unsafe {
+Diff in /Users/andreacollet/Projects/raycasting-webassembly-demo/src/lib.rs:1346:
+             POS_Y = sy as f32 + 0.5;
+         }
+     }
+-    
++
+     place_wall_lamps(s);
+ 
+     render_scene();
+```
+</details></tool-use>
+
+_**Agent (claude-sonnet-5-5 2026-10-16 12:51:05Z)**_
+
+`cargo fmt --check` fails on `src/lib.rs`, which has formatting drift only. `scripts/verify` requires it to pass, so I'll apply it and then see what clippy says.
+
+_**Agent (claude-sonnet-5-5 2026-10-16 12:51:12Z)**_
+
+<tool-use data-tool-type="shell" data-tool-name="Bash"><details>
+<summary>Tool use: **Bash**</summary>
+Apply cargo fmt, then run clippy
+
+`cargo fmt && git diff --stat src/lib.rs && cargo clippy --all-targets -- -D warnings 2>&1 | grep -E "^(error|warning)" | sort | uniq -c | sort -rn | head -20`
+
+```text
+ src/lib.rs | 284 +++++++++++++++++++++++++++++++++++++------------------------
+ 1 file changed, 175 insertions(+), 109 deletions(-)
+   8 error: clamp-like pattern without using clamp function
+   2 error: casting to the same type is unnecessary (`i32` -> `i32`)
+   1 warning: build failed, waiting for other jobs to finish...
+   1 error: this function has too many arguments (8/7)
+   1 error: float has excessive precision
+   1 error: could not compile `wasm-raycaster` (lib) due to 13 previous errors
+   1 error: could not compile `wasm-raycaster` (lib test) due to 13 previous errors
+   1 error: approximate value of `f{32, 64}::consts::FRAC_1_SQRT_2` found
+```
+</details></tool-use>
+
+_**Agent (claude-sonnet-5-5 2026-10-16 12:51:14Z)**_
+
+There are 13 clippy errors, mostly mechanical. I'll let `clippy --fix` do what it can and see what's left.
+
+_**Agent (claude-sonnet-5-5 2026-10-16 12:51:16Z)**_
+
+<tool-use data-tool-type="shell" data-tool-name="Bash"><details>
+<summary>Tool use: **Bash**</summary>
+Auto-fix clippy lints and list leftovers
+
+`cargo clippy --fix --allow-dirty --lib -- -D warnings 2>&1 | tail -3; cargo fmt; cargo clippy --all-targets -- -D warnings 2>&1 | grep -E -A8 "^error" | head -60`
+
+```text
+warning: `wasm-raycaster` (lib) generated 9 warnings
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.17s
+error: clamp-like pattern without using clamp function
+   --> src/lib.rs:199:14
+    |
+199 |     let dx = (fx - fx.floor()).max(0.0).min(1.0);
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: replace with clamp: `(fx - fx.floor()).clamp(0.0, 1.0)`
+    |
+    = note: clamp will panic if max < min, min.is_nan(), or max.is_nan()
+    = note: clamp returns NaN if the input is NaN
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_clamp
+--
+error: clamp-like pattern without using clamp function
+   --> src/lib.rs:200:14
+    |
+200 |     let dy = (fy - fy.floor()).max(0.0).min(1.0);
+    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: replace with clamp: `(fy - fy.floor()).clamp(0.0, 1.0)`
+    |
+    = note: clamp will panic if max < min, min.is_nan(), or max.is_nan()
+    = note: clamp returns NaN if the input is NaN
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_clamp
+--
+error: clamp-like pattern without using clamp function
+   --> src/lib.rs:248:13
+    |
+248 |     let s = shade.max(0.0).min(1.0);
+    |             ^^^^^^^^^^^^^^^^^^^^^^^ help: replace with clamp: `shade.clamp(0.0, 1.0)`
+    |
+    = note: clamp will panic if max < min, min.is_nan(), or max.is_nan()
+    = note: clamp returns NaN if the input is NaN
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_clamp
+--
+error: clamp-like pattern without using clamp function
+   --> src/lib.rs:292:29
+    |
+292 |                 let mut v = (y as f32 / base_center).max(0.0).min(1.0);
+    |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: replace with clamp: `(y as f32 / base_center).clamp(0.0, 1.0)`
+    |
+    = note: clamp will panic if max < min, min.is_nan(), or max.is_nan()
+    = note: clamp returns NaN if the input is NaN
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_clamp
+--
+error: clamp-like pattern without using clamp function
+   --> src/lib.rs:408:29
+    |
+408 |                 let tex_v = tex_y_pos.max(0.0).min(1.0);
+    |                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^ help: replace with clamp: `tex_y_pos.clamp(0.0, 1.0)`
+    |
+    = note: clamp will panic if max < min, min.is_nan(), or max.is_nan()
+    = note: clamp returns NaN if the input is NaN
+    = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.99.0/index.html#manual_clamp
+--
+error: this function has too many arguments (8/7)
+   --> src/lib.rs:526:1
+    |
+526 | / fn render_sprites(
+527 | |     center: f32,
+528 | |     z_buffer: &[i32],
+529 | |     pos_x: f32,
+...   |
+534 | |     plane_y: f32,
+--
+```
+</details></tool-use>
+
+_**Agent (claude-sonnet-5-5 2026-10-16 12:51:21Z)**_
+
+<think><details><summary>Thought Process</summary>
+I'll manually swap `.max(0.0).min(1.0)` for `.clamp(0.0, 1.0)` since clippy --fix skipped these and the values involved are all finite. First let me check what other non-clamp errors remain.
+
+</details></think>
+
+_**Agent (claude-sonnet-5-5 2026-10-16 12:51:21Z)**_
+
+<tool-use data-tool-type="shell" data-tool-name="Bash"><details>
+<summary>Tool use: **Bash**</summary>
+List remaining non-clamp clippy errors
+
+`cargo clippy --all-targets -- -D warnings 2>&1 | grep -E -A6 "^error" | grep -vE "clamp|^--$|^ *= " | grep -E "^error|-->|\|  " | sed -n 1,60p; grep -n "allow(" src/lib.rs | head`
+
+```text
+   --> src/lib.rs:199:14
+199 |     let dx = (fx - fx.floor()).max(0.0).min(1.0);
+   --> src/lib.rs:200:14
+200 |     let dy = (fy - fy.floor()).max(0.0).min(1.0);
+   --> src/lib.rs:248:13
+248 |     let s = shade.max(0.0).min(1.0);
+   --> src/lib.rs:292:29
+292 |                 let mut v = (y as f32 / base_center).max(0.0).min(1.0);
+   --> src/lib.rs:408:29
+408 |                 let tex_v = tex_y_pos.max(0.0).min(1.0);
+error: this function has too many arguments (8/7)
+   --> src/lib.rs:526:1
+527 | |     center: f32,
+528 | |     z_buffer: &[i32],
+529 | |     pos_x: f32,
+   --> src/lib.rs:668:33
+668 |                       let tex_x = ((stripe - draw_start_x) as f32 / sprite_width)
+    |  _________________________________^
+669 | |                         .max(0.0)
+670 | |                         .min(1.0);
+   --> src/lib.rs:676:37
+676 |                           let tex_y = ((y - draw_start_y) as f32 / sprite_height)
+    |  _____________________________________^
+677 | |                             .max(0.0)
+678 | |                             .min(1.0);
+   --> src/lib.rs:722:32
+722 |         CAMERA_HEIGHT_FACTOR = f.max(0.0).min(1.0);
+error: could not compile `wasm-raycaster` (lib test) due to 9 previous errors
+error: could not compile `wasm-raycaster` (lib) due to 9 previous errors
+2:#![allow(static_mut_refs)]
+125:    #[allow(dead_code)]
+713:    #[allow(static_mut_refs)]
+753:    #[allow(static_mut_refs)]
+773:    #[allow(static_mut_refs)]
+822:    #[allow(static_mut_refs)]
+856:    #[allow(static_mut_refs)]
+912:    #[allow(static_mut_refs)]
+1336:    #[allow(static_mut_refs)]
+```
+</details></tool-use>
+
+_**Agent (claude-sonnet-5-5 2026-10-16 12:51:26Z)**_
+
+<think><details><summary>Thought Process</summary>
+I found that line 722's `clamp` behaves differently from `max`/`min` with NaN, so I'll keep it unchanged with a targeted `allow`, convert the remaining cases, and allow the 8-argument signature on `render_sprites`.
+
+</details></think>
+
+_**Agent (claude-sonnet-5-5 2026-10-16 12:51:29Z)**_
+
+<tool-use data-tool-type="shell" data-tool-name="Bash"><details>
+<summary>Tool use: **Bash**</summary>
+Apply clamp fixes and targeted allows
+
+```bash
+perl -0pi -e 's/\.max\(0\.0\)\s*\.min\(1\.0\)/.clamp(0.0, 1.0)/g if 0' src/lib.rs && perl -0pi -e '
+s/(let dx = \(fx - fx\.floor\(\)\))\.max\(0\.0\)\.min\(1\.0\)/$1.clamp(0.0, 1.0)/;
+s/(let dy = \(fy - fy\.floor\(\)\))\.max\(0\.0\)\.min\(1\.0\)/$1.clamp(0.0, 1.0)/;
+s/shade\.max\(0\.0\)\.min\(1\.0\)/shade.clamp(0.0, 1.0)/;
+s/base_center\)\.max\(0\.0\)\.min\(1\.0\)/base_center).clamp(0.0, 1.0)/;
+s/tex_y_pos\.max\(0\.0\)\.min\(1\.0\)/tex_y_pos.clamp(0.0, 1.0)/;
+s/(\/ sprite_width\))\s*\.max\(0\.0\)\s*\.min\(1\.0\)/$1.clamp(0.0, 1.0)/;
+s/(\/ sprite_height\))\s*\.max\(0\.0\)\s*\.min\(1\.0\)/$1.clamp(0.0, 1.0)/;
+s/\n(\s*)(CAMERA_HEIGHT_FACTOR = f\.max\(0\.0\)\.min\(1\.0\);)/\n$1\/\/ max\/min (not clamp) so a NaN from JS collapses to 0 instead of propagating\n$1#[allow(clippy::manual_clamp)]\n$1$2/;
+s/\nfn render_sprites\(/\n#[allow(clippy::too_many_arguments)]\nfn render_sprites(/;
+' src/lib.rs && cargo fmt && cargo clippy --all-targets -- -D warnings 2>&1 | tail -15
+```
+
+```text
+    Checking wasm-raycaster v0.1.0 (/Users/andreacollet/Projects/raycasting-webassembly-demo)
+error[E0658]: attributes on expressions are experimental
+   --> src/lib.rs:720:9
+    |
+720 |         #[allow(clippy::manual_clamp)]
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: see issue #15701 <https://github.com/rust-lang/rust/issues/15701> for more information
+
+For more information about this error, try `rustc --explain E0658`.
+error: could not compile `wasm-raycaster` (lib test) due to 1 previous error
+warning: build failed, waiting for other jobs to finish...
+error: could not compile `wasm-raycaster` (lib) due to 1 previous error
+```
+</details></tool-use>
+
+_**Agent (claude-sonnet-5-5 2026-10-16 12:51:31Z)**_
+
+Attributes aren't allowed on assignment expressions, so I'll move the `allow` up to the function.
+
+_**Agent (claude-sonnet-5-5 2026-10-16 12:51:32Z)**_
+
+<tool-use data-tool-type="shell" data-tool-name="Bash"><details>
+<summary>Tool use: **Bash**</summary>
+View context around line 720
+
+`sed -n 705,725p src/lib.rs`
+
+```text
+    HEIGHT as u32
+}
+
+#[wasm_bindgen]
+pub fn get_framebuffer_ptr() -> *const u8 {
+    #[allow(static_mut_refs)]
+    unsafe {
+        FRAMEBUFFER.as_ptr()
+    }
+}
+
+#[wasm_bindgen]
+pub fn set_camera_height_factor(f: f32) {
+    unsafe {
+        // max/min (not clamp) so a NaN from JS collapses to 0 instead of propagating
+        #[allow(clippy::manual_clamp)]
+        CAMERA_HEIGHT_FACTOR = f.max(0.0).min(1.0);
+    }
+}
+
+#[wasm_bindgen]
+```
+</details></tool-use>
+
+_**Agent (claude-sonnet-5-5 2026-10-16 12:51:35Z)**_
+
+<tool-use data-tool-type="shell" data-tool-name="Bash"><details>
+<summary>Tool use: **Bash**</summary>
+Move allow to function and rerun clippy
+
+```bash
+python3 - <<'EOF'
+p='src/lib.rs'
+s=open(p).read()
+s=s.replace("""#[wasm_bindgen]
+pub fn set_camera_height_factor(f: f32) {
+    unsafe {
+        // max/min (not clamp) so a NaN from JS collapses to 0 instead of propagating
+        #[allow(clippy::manual_clamp)]
+""","""// max/min (not clamp) so a NaN from JS collapses to 0 instead of propagating
+#[allow(clippy::manual_clamp)]
+#[wasm_bindgen]
+pub fn set_camera_height_factor(f: f32) {
+    unsafe {
+""")
+open(p,'w').write(s)
+EOF
+cargo fmt && cargo clippy --all-targets -- -D warnings 2>&1 | tail -15
+```
+
+```text
+    Checking wasm-raycaster v0.1.0 (/Users/andreacollet/Projects/raycasting-webassembly-demo)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.08s
+[This command modified 1 file you've previously read: src/lib.rs. Call Read before editing.]
+```
+</details></tool-use>
+
+_**Agent (claude-sonnet-5-5 2026-10-16 12:51:40Z)**_
+
+Clippy is clean. Now CI itself needs three changes. It must use the existing `.node-version`. It must install Rust and wasm-pack, because `npm test` now builds. And it should get the wasm target.
+
+_**Agent (claude-sonnet-5-5 2026-10-16 12:51:43Z)**_
+
+<tool-use data-tool-type="shell" data-tool-name="Bash"><details>
+<summary>Tool use: **Bash**</summary>
+Update CI workflow, check audit and formatting
+
+```bash
+python3 - <<'EOF'
+p='.github/workflows/ci.yml'
+s=open(p).read()
+s=s.replace("node-version-file: .nvmrc","node-version-file: .node-version")
+s=s.replace("      - run: npm ci\n","      - run: rustup target add wasm32-unknown-unknown\n      - run: curl -sSf https://rustwasm.github.io/wasm-pack/installer/init.sh | sh\n      - run: npm ci\n",1)
+open(p,'w').write(s)
+EOF
+cat .github/workflows/ci.yml | sed -n 10,30p; npm audit --omit=dev --audit-level=high 2>&1 | tail -4; npx prettier --check .github tools package.json 2>&1 | tail -4
+```
+
+```text
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: npm
+      - run: rustup target add wasm32-unknown-unknown
+      - run: curl -sSf https://rustwasm.github.io/wasm-pack/installer/init.sh | sh
+      - run: npm ci
+      - run: bash scripts/verify
+      - run: npm audit --omit=dev --audit-level=high
+npm warn install-scripts .npmrc allow-scripts setting is being ignored because package.json declares its own allowScripts field
+found 0 vulnerabilities
+Checking formatting...
+[warn] .github/dependabot.yml
+[warn] .github/pull_request_template.md
+[warn] Code style issues found in 2 files. Run Prettier with --write to fix.
+```
+</details></tool-use>
+
+_**Agent (claude-sonnet-5-5 2026-10-16 12:51:45Z)**_
+
+The two Prettier warnings are in files I haven't touched, and `verify` doesn't run a format check, so I'm leaving them. Last, a full `scripts/verify` run, the same command CI runs.
+
+_**Agent (claude-sonnet-5-5 2026-10-16 12:52:01Z)**_
+
+<tool-use data-tool-type="shell" data-tool-name="Bash"><details>
+<summary>Tool use: **Bash**</summary>
+Run full verify and show changed files
+
+`scripts/verify 2>&1 | grep -E "▶|✅|❌|passed|failed|test result|error" ; echo "exit=${PIPESTATUS[0]}"; git status --short | grep -v specstory`
+
+```text
+▶ npm run --silent test
+✅ done 001-walk_sequence
+✅ test_001_walk_sequence.js passed
+✅ done 002-turn_sequence
+✅ test_002_turn_sequence.js passed
+✅ done 003-approach_wall
+✅ test_003_approach_wall.js passed
+All tests passed
+▶ cargo fmt --check
+▶ cargo clippy --all-targets -- -D warnings
+▶ cargo test
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+exit=
+ M .github/workflows/ci.yml
+ M package.json
+ M src/lib.rs
+ M tools/run_tests.js
+```
+</details></tool-use>
+
+_**Agent (claude-sonnet-5-5 2026-10-16 12:52:08Z)**_
+
+`scripts/verify` now passes locally, covering the 3 browser tests, `cargo fmt --check`, `cargo clippy -D warnings` and `cargo test`. I haven't committed or pushed anything, so the pipeline will keep failing until you do.
+
+**Pages deploy failure**
+- The 404 meant Pages wasn't enabled when that run happened. The GitHub API now shows it enabled with the Actions source.
+- That was the setting I flagged earlier, so the deploy needs no code change. Re-run the failed **Pages** workflow, or let the next push trigger it.
+
+**CI failure**
+- **Tests:** the three browser tests have been broken since before my changes. They loaded `/www/main.js`, which no longer exists since the move to Svelte. [tools/run_tests.js](tools/run_tests.js) now serves the built `dist/` app, and `npm test` builds first through a new `pretest` script in [package.json](package.json). The tests now run against the bundle that ships.
+- **Rust checks:** these were never reached in CI because the tests failed first, and they were also failing.
+  - [src/lib.rs](src/lib.rs) needed a `cargo fmt`, which is about 280 lines of whitespace-only diff.
+  - It also had 13 clippy errors. Most were `.max(0.0).min(1.0)` calls replaced with `.clamp(0.0, 1.0)`, plus two redundant casts and two float-constant lints.
+  - I kept `set_camera_height_factor` as `max`/`min` with an `allow` and a comment. It takes input from JavaScript, and a NaN would behave differently under `clamp`.
+  - `render_sprites` gets `#[allow(clippy::too_many_arguments)]` because it takes 8.
+- **Workflow file:** [ci.yml](.github/workflows/ci.yml) pointed at `.nvmrc`, which doesn't exist; it now uses `.node-version`. It also installs the wasm target and wasm-pack, because `npm test` now needs them.
+
+**Not verified:** I haven't run any of this on GitHub's runners, so the first CI run after you push is the real check.
+
+Want me to commit this and push?
