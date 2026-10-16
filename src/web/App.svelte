@@ -372,12 +372,12 @@
     }
 
     const [wallTex, floorTex] = await Promise.all([
-      loadTexture('../../assets/wall.png'),
-      loadTexture('../../assets/floor.png'),
+      loadTexture(new URL('../../assets/wall.webp', import.meta.url).href),
+      loadTexture(new URL('../../assets/floor.webp', import.meta.url).href),
     ]);
-    const skyTex = await loadTexture('../../assets/skybox.png');
-    const ceilingTex = await loadTexture('../../assets/ceiling.png');
-    const spriteTex = await loadTexture('../../assets/lamp-wall.png');
+    const skyTex = await loadTexture(new URL('../../assets/skybox.webp', import.meta.url).href);
+    const ceilingTex = await loadTexture(new URL('../../assets/ceiling.webp', import.meta.url).href);
+    const spriteTex = await loadTexture(new URL('../../assets/lamp-wall.webp', import.meta.url).href);
 
     // allocate in wasm
     const wallTexPtr = pkg.alloc_wall_texture(wallTex.width, wallTex.height);
