@@ -2,25 +2,186 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>Super Simple WASM Raycaster</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>WebAssembly Raycaster in Rust – Play in Your Browser</title>
+    <meta
+      name="description"
+      content="Play a textured, Wolfenstein-style raycasting engine written in Rust and compiled to WebAssembly. Procedural maps, sprites, skybox and jumping, rendered on the CPU at 320×200."
+    />
+    <link rel="canonical" href="https://ifthenelse.github.io/raycasting-webassembly-demo/" />
     <link rel="icon" type="image/png" href="./favicon.png" />
+    <meta name="theme-color" content="#111111" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="WebAssembly Raycaster in Rust" />
+    <meta
+      property="og:description"
+      content="A CPU raycasting engine in Rust + WebAssembly with textured walls, floors, skybox, sprites and procedural maps. Runs in your browser."
+    />
+    <meta property="og:url" content="https://ifthenelse.github.io/raycasting-webassembly-demo/" />
+    <meta
+      property="og:image"
+      content="https://ifthenelse.github.io/raycasting-webassembly-demo/og-image.jpg"
+    />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta
+      property="og:image:alt"
+      content="First-person view of a brick-walled room with a tiled floor, red sky and a glowing wall lamp, rendered by the WebAssembly raycaster"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@graph": [
+          {
+            "@type": ["WebApplication", "VideoGame"],
+            "@id": "https://ifthenelse.github.io/raycasting-webassembly-demo/#app",
+            "name": "WebAssembly Raycaster",
+            "url": "https://ifthenelse.github.io/raycasting-webassembly-demo/",
+            "description": "A textured CPU raycasting engine written in Rust and compiled to WebAssembly, with procedural maps, sprites, skybox and jumping.",
+            "applicationCategory": "GameApplication",
+            "genre": "First-person tech demo",
+            "operatingSystem": "Any (modern web browser with WebAssembly)",
+            "gamePlatform": "Web browser",
+            "playMode": "SinglePlayer",
+            "isAccessibleForFree": true,
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+            "image": "https://ifthenelse.github.io/raycasting-webassembly-demo/og-image.jpg",
+            "author": { "@type": "Person", "name": "Andrea Collet" },
+            "license": "https://opensource.org/licenses/MIT"
+          },
+          {
+            "@type": "SoftwareSourceCode",
+            "name": "raycasting-webassembly-demo",
+            "codeRepository": "https://github.com/ifthenelse/raycasting-webassembly-demo",
+            "programmingLanguage": ["Rust", "JavaScript"],
+            "runtimePlatform": "WebAssembly",
+            "author": { "@type": "Person", "name": "Andrea Collet" },
+            "license": "https://opensource.org/licenses/MIT"
+          },
+          {
+            "@type": "FAQPage",
+            "mainEntity": [
+              {
+                "@type": "Question",
+                "name": "What is raycasting?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "Raycasting is a rendering technique that casts one ray per screen column across a 2D grid map, finds the nearest wall hit with a DDA grid walk, and draws a vertical slice whose height is inversely proportional to the corrected distance. Wolfenstein 3D (1992) popularised it."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Why write a raycaster in Rust and WebAssembly?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "The per-pixel inner loops run as compiled WebAssembly instead of JavaScript. Rust writes every pixel into a shared RGBA framebuffer in WASM linear memory, and JavaScript only copies that buffer to a canvas once per frame."
+                }
+              },
+              {
+                "@type": "Question",
+                "name": "Does it use WebGL or the GPU?",
+                "acceptedAnswer": {
+                  "@type": "Answer",
+                  "text": "No. All rendering happens on the CPU inside WebAssembly at 320×200. The browser canvas is only used to display the finished frame."
+                }
+              }
+            ]
+          }
+        ]
+      }
+    </script>
     <style>
       body {
         margin: 0;
         background: #111;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 100vh;
+        color: #ccc;
+        font:
+          16px/1.6 system-ui,
+          sans-serif;
       }
       canvas {
         image-rendering: pixelated;
         border: 2px solid #444;
       }
+      #about {
+        max-width: 72ch;
+        margin: 0 auto;
+        padding: 32px 16px 64px;
+      }
+      #about a {
+        color: #8cf;
+      }
+      #about h1,
+      #about h2 {
+        color: #eee;
+        line-height: 1.25;
+      }
+      kbd {
+        border: 1px solid #555;
+        border-radius: 3px;
+        padding: 0 4px;
+        font-size: 0.9em;
+      }
     </style>
   </head>
   <body>
     <div id="app"></div>
+
+    <main id="about">
+      <h1>WebAssembly Raycaster in Rust</h1>
+      <p>
+        This is a Wolfenstein-style raycasting engine written in Rust and compiled to WebAssembly
+        with <code>wasm-bindgen</code>. It renders textured walls, floors, ceilings, a skybox and
+        sprites on the CPU at 320×200, then copies the frame to a canvas. Click the game view above
+        to focus it and start moving.
+      </p>
+
+      <h2>Controls</h2>
+      <ul>
+        <li><kbd>W</kbd> / <kbd>↑</kbd> move forward, <kbd>S</kbd> / <kbd>↓</kbd> move back</li>
+        <li><kbd>A</kbd> / <kbd>←</kbd> turn left, <kbd>D</kbd> / <kbd>→</kbd> turn right</li>
+        <li><kbd>,</kbd> / <kbd>.</kbd> strafe left / right</li>
+        <li><kbd>Space</kbd> jump, hold <kbd>Shift</kbd> to walk</li>
+        <li><kbd>M</kbd> generate a new random map</li>
+      </ul>
+
+      <h2>Features</h2>
+      <ul>
+        <li>Textured raycasting for walls, floors, ceilings and a skybox</li>
+        <li>Sprites that pick a frame from the viewing angle, as in Duke Nukem 3D</li>
+        <li>Wall lamps placed automatically on generated maps</li>
+        <li>Movement with wall sliding and jump physics</li>
+        <li>Procedural maps with random walls and ceiling sections</li>
+        <li>A debug panel with a top-down map and the player position</li>
+      </ul>
+
+      <h2>How does a raycaster work?</h2>
+      <p>
+        A raycaster casts one ray per screen column across a 2D grid map. A DDA grid walk finds the
+        nearest wall the ray hits. The engine then draws a vertical slice whose height is inversely
+        proportional to the fish-eye-corrected distance. Floors and ceilings are drawn row by row,
+        and sprites are sorted by depth and clipped against the wall depth buffer.
+      </p>
+
+      <h2>Why Rust and WebAssembly?</h2>
+      <p>
+        The per-pixel inner loops run as compiled WebAssembly instead of JavaScript. Rust writes
+        every pixel into a shared RGBA framebuffer in WASM linear memory. JavaScript uploads the
+        textures once and copies the framebuffer to the canvas each frame. There is no WebGL and no
+        GPU code.
+      </p>
+
+      <h2>Source code</h2>
+      <p>
+        The project is MIT-licensed and open source on
+        <a href="https://github.com/ifthenelse/raycasting-webassembly-demo"
+          >GitHub: ifthenelse/raycasting-webassembly-demo</a
+        >. Made by Andrea Collet.
+      </p>
+    </main>
 
     <script type="module" src="./src/web/main.js"></script>
   </body>

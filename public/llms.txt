@@ -1,0 +1,13 @@
+# WebAssembly Raycaster in Rust
+
+> A Wolfenstein-style raycasting engine written in Rust, compiled to WebAssembly with wasm-bindgen, and playable in the browser. It renders on the CPU at 320×200 into a shared RGBA framebuffer that JavaScript copies to a canvas each frame. There is no WebGL or GPU code. MIT-licensed, by Andrea Collet.
+
+Features: textured walls, floors and ceilings with bilinear filtering, a skybox, sprites that pick their frame from the viewing angle, wall lamps placed automatically, wall sliding and jump physics, and procedural map generation.
+
+Controls: W/S or Up/Down move, A/D or Left/Right turn, comma/period strafe, Space jump, Shift walk, M generate a new map.
+
+## Links
+
+- [Live demo](https://ifthenelse.github.io/raycasting-webassembly-demo/): play in the browser
+- [Source code](https://github.com/ifthenelse/raycasting-webassembly-demo): Rust crate in src/lib.rs, Svelte frontend in src/web/
+- [README](https://github.com/ifthenelse/raycasting-webassembly-demo/blob/main/README.md): build instructions (wasm-pack + Vite)
