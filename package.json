@@ -18,7 +18,7 @@
     "format": "prettier --write \"**/*.{js,svelte,json,css,html,md}\""
   },
   "devDependencies": {
-    "@commitlint/cli": "^21.2.3",
+    "@commitlint/cli": "^21.2.4",
     "@commitlint/config-conventional": "^21.2.3",
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "prettier": "^3.9.10",
